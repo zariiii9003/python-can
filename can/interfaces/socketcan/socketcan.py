@@ -39,6 +39,13 @@ else:
     HAS_NATIVE_SUPPORT = True
 
 
+### CHANGES FOR ACTIA CAN ###
+CAN_RAW = 7                 #
+CAN_BCM = 8                 #
+HAS_NATIVE_SUPPORT = False  #
+#############################
+
+
 if not HAS_NATIVE_SUPPORT:
     def check_status(result, function, arguments):
         if result < 0:
