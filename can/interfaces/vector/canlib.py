@@ -12,6 +12,7 @@ import time
 import os
 import typing
 from typing import List, Optional, Tuple
+
 try:
     # Try builtin Python 3 Windows API
     from _winapi import WaitForSingleObject, INFINITE
