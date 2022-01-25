@@ -35,8 +35,8 @@ The following assumes that the commands are executed from the root of the reposi
 
 The project can be built with::
 
-    pip install wheel
-    python setup.py sdist bdist_wheel
+    pip install build
+    python -m build
 
 The project can be installed in editable mode with::
 
@@ -55,7 +55,8 @@ The documentation can be built with::
 The linters can be run with::
 
     pip install -r requirements-lint.txt
-    pylint --rcfile=.pylintrc-wip can/**.py
+    mypy .
+    pylint --rcfile=.pylintrc can/**.py
     black --check --verbose can
 
 
