@@ -2,3 +2,4 @@ include *.txt
 include test/*.py
 include test/data/*.*
 recursive-include doc *.rst
+include can/py.typed
