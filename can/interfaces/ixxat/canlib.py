@@ -2,7 +2,7 @@ import can.interfaces.ixxat.canlib_vcinpl as vcinpl
 import can.interfaces.ixxat.canlib_vcinpl2 as vcinpl2
 
 from can import BusABC, Message
-from typing import Optional
+from typing import Optional, Any
 
 
 class IXXATBus(BusABC):
@@ -145,3 +145,6 @@ class IXXATBus(BusABC):
 
     def shutdown(self):
         return self.bus.shutdown()
+
+    def __getattr__(self, item: str) -> Any:
+        return self.bus.__getattribute__(item)
