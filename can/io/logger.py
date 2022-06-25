@@ -140,7 +140,7 @@ class BaseRotatingLogger(Listener, BaseIOHandler, ABC):
 
     namer: Optional[Callable[[StringPathLike], StringPathLike]] = None
     rotator: Optional[Callable[[StringPathLike, StringPathLike], None]] = None
-    rollover_count: int = 0
+    rollover_count: int = 1
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         Listener.__init__(self)

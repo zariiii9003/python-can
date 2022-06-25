@@ -12,6 +12,8 @@ of uncompressed data each. This data contains the actual CAN messages and other
 objects types.
 """
 
+import os
+import pathlib
 import struct
 import zlib
 import datetime
@@ -388,6 +390,19 @@ class BLFWriter(FileIOMessageWriter):
             speed and compression (currently equivalent to level 6).
         """
         mode = "rb+" if append else "wb"
+        # JCC 2022.06.25 hot fix
+        if os.path.isfile(file):
+            path = pathlib.Path(file)
+            new_name = (
+                    path.stem
+                    + "_"
+                    + datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+                    + "_"
+                    + f"#{0:03}"
+                    + path.suffix
+            )
+            if os.path.exists(file):
+                os.rename(file, new_name)
         try:
             super().__init__(file, mode=mode)
         except FileNotFoundError:

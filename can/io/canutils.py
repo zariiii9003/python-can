@@ -4,6 +4,9 @@ It is is compatible with "candump -L" from the canutils program
 (https://github.com/linux-can/can-utils).
 """
 
+import os
+import pathlib
+from datetime import datetime
 import logging
 from typing import Generator, TextIO, Union
 
@@ -143,6 +146,19 @@ class CanutilsLogWriter(FileIOMessageWriter):
                             the file, else the file is truncated
         """
         mode = "a" if append else "w"
+
+        if os.path.isfile(file):
+            path = pathlib.Path(file)
+            new_name = (
+                    path.stem
+                    + "_"
+                    + datetime.now().strftime("%Y-%m-%dT%H%M%S")
+                    + "_"
+                    + f"#{0:03}"
+                    + path.suffix
+            )
+            if os.path.exists(file):
+                os.rename(file, new_name)
         super().__init__(file, mode=mode)
 
         self.channel = channel
