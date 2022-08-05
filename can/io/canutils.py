@@ -135,6 +135,7 @@ class CanutilsLogWriter(FileIOMessageWriter):
         file: Union[StringPathLike, TextIO],
         channel: str = "vcan0",
         append: bool = False,
+        **options,
     ):
         """
         :param file: a path-like object or as file-like object to write to
