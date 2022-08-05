@@ -43,7 +43,7 @@ def _create_base_argument_parser(parser: argparse.ArgumentParser) -> None:
         dest="interface",
         help="""Specify the backend CAN interface to use. If left blank,
                         fall back to reading from configuration files.""",
-        choices=can.VALID_INTERFACES,
+        choices=sorted(can.VALID_INTERFACES),
     )
 
     parser.add_argument(
@@ -215,6 +215,7 @@ def main() -> None:
 
     options = {"append": results.append}
     if results.file_size:
+        options["max_container_size"] = results.file_size  # bytes
         logger = SizedRotatingLogger(
             base_filename=results.log_file, max_bytes=results.file_size, **options
         )
