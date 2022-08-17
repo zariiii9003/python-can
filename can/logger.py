@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Union, Sequence, Tuple
 import can
 from can.io import BaseRotatingLogger
 from can.io.generic import MessageWriter
-from . import Bus, BusState, Logger, SizedRotatingLogger
+from . import Bus, BusState, Logger, RotatingLogger
 from .typechecking import CanFilter, CanFilters
 
 
@@ -196,7 +196,16 @@ def main() -> None:
         help="Maximum file size in bytes (or for the case of blf, maximum "
         "buffer size before compression and flush to file). Rotate log "
         "file when size threshold is reached.",
-        default=None,
+        default=0,
+    )
+
+    parser.add_argument(
+        "-t",
+        "--time_difference",
+        dest="delta_t",
+        type=int,
+        help="Time difference in seconds between file rollover.",
+        default=0,
     )
 
     parser.add_argument(
@@ -239,9 +248,10 @@ def main() -> None:
 
     logger: Union[MessageWriter, BaseRotatingLogger]
     if results.file_size:
-        logger = SizedRotatingLogger(
+        logger = RotatingLogger(
             base_filename=results.log_file,
             max_bytes=results.file_size,
+            delta_t=results.delta_t,
             append=results.append,
             **additional_config,
         )
