@@ -380,12 +380,12 @@ class RotatingLogger(BaseRotatingLogger):
         else:
             raise ValueError("More than two suffixes are seen.")
         new_name = (
-            path.stem
+            _stem
             + "_"
             + datetime.now().strftime("%Y-%m-%dT%H%M%S")
             + "_"
             + f"#{self.rollover_count:03}"
-            + path.suffix
+            + _suffix
         )
         return str(path.parent / new_name)
 
