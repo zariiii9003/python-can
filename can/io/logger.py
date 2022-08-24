@@ -90,7 +90,7 @@ class Logger(MessageWriter):  # pylint: disable=abstract-method
 
         file_or_filename: AcceptedIOType = filename
         if suffix == ".gz":
-            suffix, file_or_filename = Logger.compress(filename)
+            suffix, file_or_filename = Logger.compress(filename, *args, **kwargs)
 
         try:
             return Logger.message_writers[suffix](file_or_filename, *args, **kwargs)
@@ -100,15 +100,18 @@ class Logger(MessageWriter):  # pylint: disable=abstract-method
             ) from None
 
     @staticmethod
-    def compress(filename: StringPathLike) -> Tuple[str, FileLike]:
+    def compress(
+        filename: StringPathLike, *args: Any, **kwargs: Any
+    ) -> Tuple[str, FileLike]:
         """
         Return the suffix and io object of the decompressed file.
         File will automatically recompress upon close.
         """
         real_suffix = pathlib.Path(filename).suffixes[-2].lower()
-        # Why is this setup to append by default?
-        # mode = "ab" if real_suffix == ".blf" else "at"
-        mode = "wb" if real_suffix == ".blf" else "wt"
+        if kwargs.get("append", False):
+            mode = "ab" if real_suffix == ".blf" else "at"
+        else:
+            mode = "wb" if real_suffix == ".blf" else "wt"
 
         return real_suffix, gzip.open(filename, mode)
 
@@ -371,21 +374,15 @@ class RotatingLogger(BaseRotatingLogger):
     def _default_name(self) -> StringPathLike:
         """Generate the default rotation filename."""
         path = pathlib.Path(self.base_filename)
-        if len(path.suffixes) == 1:
-            _stem = path.stem
-            _suffix = path.suffix
-        elif len(path.suffixes) == 2:
-            _stem = path.parts[-1].split(".")[0]
-            _suffix = "".join(path.suffixes)
-        else:
-            raise ValueError("More than two suffixes are seen.")
+        stem = path.parts[-1].split(".")[0]
+        suffix = "".join(pathlib.Path(self.base_filename).suffixes[-2:])
         new_name = (
-            _stem
+            stem
             + "_"
             + datetime.now().strftime("%Y-%m-%dT%H%M%S")
             + "_"
             + f"#{self.rollover_count:03}"
-            + _suffix
+            + suffix
         )
         return str(path.parent / new_name)
 
