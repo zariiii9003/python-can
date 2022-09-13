@@ -480,10 +480,8 @@ class VectorBus(BusABC):
         except VectorOperationError as exc:
             LOG.warning("Could not reset filters: %s", exc)
 
-    def _recv_internal(
-        self, timeout: Optional[float]
-    ) -> Tuple[Optional[Message], bool]:
-        end_time = time.time() + timeout if timeout is not None else None
+    def recv(self, timeout: Optional[float] = None) -> Optional[Message]:
+        t0 = time.time()
 
         while True:
             try:
@@ -497,11 +495,12 @@ class VectorBus(BusABC):
                     raise
             else:
                 if msg:
-                    return msg, self._is_filtered
+                    return msg
 
             # if no message was received, wait or return on timeout
+            end_time = t0 + timeout if timeout is not None else None
             if end_time is not None and time.time() > end_time:
-                return None, self._is_filtered
+                return None
 
             if HAS_EVENTS:
                 # Wait for receive event to occur
