@@ -48,49 +48,6 @@ from can.interfaces.socketcan.constants import *  # CAN_RAW, CAN_*_FLAG
 from can.interfaces.socketcan.utils import pack_filters, find_available_interfaces
 
 
-# Setup BCM struct
-def bcm_header_factory(
-    fields: List[Tuple[str, Union[Type[ctypes.c_uint32], Type[ctypes.c_long]]]],
-    alignment: int = 8,
-):
-    curr_stride = 0
-    results: List[
-        Tuple[
-            str, Union[Type[ctypes.c_uint8], Type[ctypes.c_uint32], Type[ctypes.c_long]]
-        ]
-    ] = []
-    pad_index = 0
-    for field in fields:
-        field_alignment = ctypes.alignment(field[1])
-        field_size = ctypes.sizeof(field[1])
-
-        # If the current stride index isn't a multiple of the alignment
-        # requirements of this field, then we must add padding bytes until we
-        # are aligned
-        while curr_stride % field_alignment != 0:
-            results.append(("pad_{}".format(pad_index), ctypes.c_uint8))
-            pad_index += 1
-            curr_stride += 1
-
-        # Now can it fit?
-        # Example: If this is 8 bytes and the type requires 4 bytes alignment
-        # then we can only fit when we're starting at 0. Otherwise, we will
-        # split across 2 strides.
-        #
-        # | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-        results.append(field)
-        curr_stride += field_size
-
-    # Add trailing padding to align to a multiple of the largest scalar member
-    # in the structure
-    while curr_stride % alignment != 0:
-        results.append(("pad_{}".format(pad_index), ctypes.c_uint8))
-        pad_index += 1
-        curr_stride += 1
-
-    return type("BcmMsgHead", (ctypes.Structure,), {"_fields_": results})
-
-
 # The fields definition is taken from the C struct definitions in
 # <linux/can/bcm.h>
 #
@@ -119,8 +76,8 @@ def bcm_header_factory(
 #     	__u32 nframes;
 #     	struct can_frame frames[0];
 #     };
-BcmMsgHead = bcm_header_factory(
-    fields=[
+class BcmMsgHead(ctypes.Structure):
+    _fields_ = [
         ("opcode", ctypes.c_uint32),
         ("flags", ctypes.c_uint32),
         ("count", ctypes.c_uint32),
@@ -130,8 +87,8 @@ BcmMsgHead = bcm_header_factory(
         ("ival2_tv_usec", ctypes.c_long),
         ("can_id", ctypes.c_uint32),
         ("nframes", ctypes.c_uint32),
+        ("frames", ctypes.c_uint64 * 0),  # for correct alignment
     ]
-)
 
 
 # struct module defines a binary packing format:
@@ -207,7 +164,7 @@ def build_bcm_header(
         can_id=can_id,
         nframes=nframes,
     )
-    return ctypes.string_at(ctypes.addressof(result), ctypes.sizeof(result))
+    return bytes(result)
 
 
 def build_bcm_tx_delete_header(can_id: int, flags: int) -> bytes:
