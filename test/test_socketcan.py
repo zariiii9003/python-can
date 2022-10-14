@@ -20,6 +20,7 @@ from can.interfaces.socketcan.constants import (
     STARTTIMER,
     TX_COUNTEVT,
 )
+from can.util import little_endian_to_native
 
 
 class SocketCANTest(unittest.TestCase):
@@ -119,52 +120,20 @@ class SocketCANTest(unittest.TestCase):
         assert BcmMsgHead.frames.offset == 56
         assert ctypes.sizeof(BcmMsgHead) == 56
 
-    @unittest.skipIf(
-        not (
-            ctypes.sizeof(ctypes.c_long) == 4 and ctypes.alignment(ctypes.c_long) == 4
-        ),
-        "Should only run on platforms where sizeof(long) == 4 and alignof(long) == 4",
-    )
-    def test_build_bcm_header_sizeof_long_4_alignof_long_4(self):
-        expected_result = (
+    def test_build_bcm_header(self):
+        # little_endian_to_native should return a correctly aligned
+        # bytes object for the current system
+        expected_result = little_endian_to_native(
             b"\x02\x00\x00\x00\x00\x00\x00\x00"
             b"\x00\x00\x00\x00\x00\x00\x00\x00"
             b"\x00\x00\x00\x00\x00\x00\x00\x00"
             b"\x00\x00\x00\x00\x01\x04\x00\x00"
-            b"\x01\x00\x00\x00\x00\x00\x00\x00"
+            b"\x01\x00\x00\x00",
+            fmt="<IIIllllII",
         )
 
-        self.assertEqual(
-            expected_result,
-            build_bcm_header(
-                opcode=CAN_BCM_TX_DELETE,
-                flags=0,
-                count=0,
-                ival1_seconds=0,
-                ival1_usec=0,
-                ival2_seconds=0,
-                ival2_usec=0,
-                can_id=0x401,
-                nframes=1,
-            ),
-        )
-
-    @unittest.skipIf(
-        not (
-            ctypes.sizeof(ctypes.c_long) == 8 and ctypes.alignment(ctypes.c_long) == 8
-        ),
-        "Should only run on platforms where sizeof(long) == 8 and alignof(long) == 8",
-    )
-    def test_build_bcm_header_sizeof_long_8_alignof_long_8(self):
-        expected_result = (
-            b"\x02\x00\x00\x00\x00\x00\x00\x00"
-            b"\x00\x00\x00\x00\x00\x00\x00\x00"
-            b"\x00\x00\x00\x00\x00\x00\x00\x00"
-            b"\x00\x00\x00\x00\x00\x00\x00\x00"
-            b"\x00\x00\x00\x00\x00\x00\x00\x00"
-            b"\x00\x00\x00\x00\x00\x00\x00\x00"
-            b"\x01\x04\x00\x00\x01\x00\x00\x00"
-        )
+        # pad to 8byte alignment
+        expected_result += b"\x00" * ((8 - len(expected_result) % 8) % 8)
 
         self.assertEqual(
             expected_result,

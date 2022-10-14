@@ -3,6 +3,7 @@ Utilities and configuration file parsing.
 """
 
 import functools
+import struct
 import warnings
 from typing import Any, Callable, cast, Dict, Iterable, Tuple, Optional, Union
 from time import time, perf_counter, get_clock_info
@@ -386,6 +387,23 @@ def time_perfcounter_correlation() -> Tuple[float, float]:
     else:
         return time(), perf_counter()
     return t1, performance_counter
+
+
+def little_endian_to_native(data: bytes, fmt: str) -> bytes:
+    """Convert a little endian :class:`bytes` object to the system native byte order.
+
+    :param data:
+        little endian :class:`bytes` object
+    :param fmt:
+        format string (see `here <https://docs.python.org/3/library/struct.html#format-characters>`_).
+        The format string must start with '<'.
+
+    .. note::
+        the returned :class:`bytes` object might have a different length than the original *data*
+    """
+    if fmt[0] != "<":
+        raise ValueError("fmt string must start with '<'")
+    return struct.pack("@" + fmt[1:], *struct.unpack(fmt, data))
 
 
 if __name__ == "__main__":
