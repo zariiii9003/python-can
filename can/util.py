@@ -395,7 +395,8 @@ def little_endian_to_native(data: bytes, fmt: str) -> bytes:
     :param data:
         little endian :class:`bytes` object
     :param fmt:
-        format string (see `here <https://docs.python.org/3/library/struct.html#format-characters>`_).
+        Format string
+        (see `here <https://docs.python.org/3/library/struct.html#format-characters>`_).
         The format string must start with '<'.
 
     .. note::
