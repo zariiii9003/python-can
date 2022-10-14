@@ -4,15 +4,9 @@
 Test functions in `can.interfaces.socketcan.socketcan`.
 """
 import unittest
-
-from unittest.mock import Mock
-from unittest.mock import patch
-from unittest.mock import call
-
 import ctypes
 
 from can.interfaces.socketcan.socketcan import (
-    bcm_header_factory,
     build_bcm_header,
     build_bcm_tx_delete_header,
     build_bcm_transmit_header,
@@ -29,15 +23,18 @@ from can.interfaces.socketcan.constants import (
 
 
 class SocketCANTest(unittest.TestCase):
-    def setUp(self):
-        self._ctypes_sizeof = ctypes.sizeof
-        self._ctypes_alignment = ctypes.alignment
-
-    @patch("ctypes.sizeof")
-    @patch("ctypes.alignment")
-    def test_bcm_header_factory_32_bit_sizeof_long_4_alignof_long_4(
-        self, ctypes_sizeof, ctypes_alignment
-    ):
+    @unittest.skipIf(
+        not all(
+            [
+                ctypes.sizeof(ctypes.c_long) == 4,
+                ctypes.sizeof(ctypes.c_longlong) == 8,
+                ctypes.alignment(ctypes.c_long) == 4,
+                ctypes.alignment(ctypes.c_longlong) == 4,
+            ]
+        ),
+        "Incorrect size or alignment",
+    )
+    def test_bcm_header_factory_32_bit_sizeof_long_4_alignof_long_4(self):
         """This tests a 32-bit platform (ex. Debian Stretch on i386), where:
 
         * sizeof(long) == 4
@@ -46,67 +43,30 @@ class SocketCANTest(unittest.TestCase):
         * alignof(long long) == 4
         """
 
-        def side_effect_ctypes_sizeof(value):
-            type_to_size = {
-                ctypes.c_longlong: 8,
-                ctypes.c_long: 4,
-                ctypes.c_uint8: 1,
-                ctypes.c_uint16: 2,
-                ctypes.c_uint32: 4,
-                ctypes.c_uint64: 8,
-            }
-            return type_to_size[value]
+        assert BcmMsgHead.opcode.offset == 0
+        assert BcmMsgHead.flags.offset == 4
+        assert BcmMsgHead.count.offset == 8
+        assert BcmMsgHead.ival1_tv_sec.offset == 12
+        assert BcmMsgHead.ival1_tv_usec.offset == 16
+        assert BcmMsgHead.ival2_tv_sec.offset == 20
+        assert BcmMsgHead.ival2_tv_usec.offset == 24
+        assert BcmMsgHead.can_id.offset == 28
+        assert BcmMsgHead.nframes.offset == 32
+        assert BcmMsgHead.frames.offset == 40
+        assert ctypes.sizeof(BcmMsgHead) == 40
 
-        def side_effect_ctypes_alignment(value):
-            type_to_alignment = {
-                ctypes.c_longlong: 4,
-                ctypes.c_long: 4,
-                ctypes.c_uint8: 1,
-                ctypes.c_uint16: 2,
-                ctypes.c_uint32: 4,
-                ctypes.c_uint64: 4,
-            }
-            return type_to_alignment[value]
-
-        ctypes_sizeof.side_effect = side_effect_ctypes_sizeof
-        ctypes_alignment.side_effect = side_effect_ctypes_alignment
-
-        fields = [
-            ("opcode", ctypes.c_uint32),
-            ("flags", ctypes.c_uint32),
-            ("count", ctypes.c_uint32),
-            ("ival1_tv_sec", ctypes.c_long),
-            ("ival1_tv_usec", ctypes.c_long),
-            ("ival2_tv_sec", ctypes.c_long),
-            ("ival2_tv_usec", ctypes.c_long),
-            ("can_id", ctypes.c_uint32),
-            ("nframes", ctypes.c_uint32),
-        ]
-        BcmMsgHead = bcm_header_factory(fields)
-
-        expected_fields = [
-            ("opcode", ctypes.c_uint32),
-            ("flags", ctypes.c_uint32),
-            ("count", ctypes.c_uint32),
-            ("ival1_tv_sec", ctypes.c_long),
-            ("ival1_tv_usec", ctypes.c_long),
-            ("ival2_tv_sec", ctypes.c_long),
-            ("ival2_tv_usec", ctypes.c_long),
-            ("can_id", ctypes.c_uint32),
-            ("nframes", ctypes.c_uint32),
-            # We expect 4 bytes of padding
-            ("pad_0", ctypes.c_uint8),
-            ("pad_1", ctypes.c_uint8),
-            ("pad_2", ctypes.c_uint8),
-            ("pad_3", ctypes.c_uint8),
-        ]
-        self.assertEqual(expected_fields, BcmMsgHead._fields_)
-
-    @patch("ctypes.sizeof")
-    @patch("ctypes.alignment")
-    def test_bcm_header_factory_32_bit_sizeof_long_4_alignof_long_long_8(
-        self, ctypes_sizeof, ctypes_alignment
-    ):
+    @unittest.skipIf(
+        not all(
+            [
+                ctypes.sizeof(ctypes.c_long) == 4,
+                ctypes.sizeof(ctypes.c_longlong) == 8,
+                ctypes.alignment(ctypes.c_long) == 4,
+                ctypes.alignment(ctypes.c_longlong) == 8,
+            ]
+        ),
+        "Incorrect size or alignment",
+    )
+    def test_bcm_header_factory_32_bit_sizeof_long_4_alignof_long_long_8(self):
         """This tests a 32-bit platform (ex. Raspbian Stretch on armv7l), where:
 
         * sizeof(long) == 4
@@ -115,67 +75,30 @@ class SocketCANTest(unittest.TestCase):
         * alignof(long long) == 8
         """
 
-        def side_effect_ctypes_sizeof(value):
-            type_to_size = {
-                ctypes.c_longlong: 8,
-                ctypes.c_long: 4,
-                ctypes.c_uint8: 1,
-                ctypes.c_uint16: 2,
-                ctypes.c_uint32: 4,
-                ctypes.c_uint64: 8,
-            }
-            return type_to_size[value]
+        assert BcmMsgHead.opcode.offset == 0
+        assert BcmMsgHead.flags.offset == 4
+        assert BcmMsgHead.count.offset == 8
+        assert BcmMsgHead.ival1_tv_sec.offset == 12
+        assert BcmMsgHead.ival1_tv_usec.offset == 16
+        assert BcmMsgHead.ival2_tv_sec.offset == 20
+        assert BcmMsgHead.ival2_tv_usec.offset == 24
+        assert BcmMsgHead.can_id.offset == 28
+        assert BcmMsgHead.nframes.offset == 32
+        assert BcmMsgHead.frames.offset == 40
+        assert ctypes.sizeof(BcmMsgHead) == 40
 
-        def side_effect_ctypes_alignment(value):
-            type_to_alignment = {
-                ctypes.c_longlong: 8,
-                ctypes.c_long: 4,
-                ctypes.c_uint8: 1,
-                ctypes.c_uint16: 2,
-                ctypes.c_uint32: 4,
-                ctypes.c_uint64: 8,
-            }
-            return type_to_alignment[value]
-
-        ctypes_sizeof.side_effect = side_effect_ctypes_sizeof
-        ctypes_alignment.side_effect = side_effect_ctypes_alignment
-
-        fields = [
-            ("opcode", ctypes.c_uint32),
-            ("flags", ctypes.c_uint32),
-            ("count", ctypes.c_uint32),
-            ("ival1_tv_sec", ctypes.c_long),
-            ("ival1_tv_usec", ctypes.c_long),
-            ("ival2_tv_sec", ctypes.c_long),
-            ("ival2_tv_usec", ctypes.c_long),
-            ("can_id", ctypes.c_uint32),
-            ("nframes", ctypes.c_uint32),
-        ]
-        BcmMsgHead = bcm_header_factory(fields)
-
-        expected_fields = [
-            ("opcode", ctypes.c_uint32),
-            ("flags", ctypes.c_uint32),
-            ("count", ctypes.c_uint32),
-            ("ival1_tv_sec", ctypes.c_long),
-            ("ival1_tv_usec", ctypes.c_long),
-            ("ival2_tv_sec", ctypes.c_long),
-            ("ival2_tv_usec", ctypes.c_long),
-            ("can_id", ctypes.c_uint32),
-            ("nframes", ctypes.c_uint32),
-            # We expect 4 bytes of padding
-            ("pad_0", ctypes.c_uint8),
-            ("pad_1", ctypes.c_uint8),
-            ("pad_2", ctypes.c_uint8),
-            ("pad_3", ctypes.c_uint8),
-        ]
-        self.assertEqual(expected_fields, BcmMsgHead._fields_)
-
-    @patch("ctypes.sizeof")
-    @patch("ctypes.alignment")
-    def test_bcm_header_factory_64_bit_sizeof_long_8_alignof_long_8(
-        self, ctypes_sizeof, ctypes_alignment
-    ):
+    @unittest.skipIf(
+        not all(
+            [
+                ctypes.sizeof(ctypes.c_long) == 8,
+                ctypes.sizeof(ctypes.c_longlong) == 8,
+                ctypes.alignment(ctypes.c_long) == 8,
+                ctypes.alignment(ctypes.c_longlong) == 8,
+            ]
+        ),
+        "Incorrect size or alignment",
+    )
+    def test_bcm_header_factory_64_bit_sizeof_long_8_alignof_long_8(self):
         """This tests a 64-bit platform (ex. Ubuntu 18.04 on x86_64), where:
 
         * sizeof(long) == 8
@@ -184,61 +107,17 @@ class SocketCANTest(unittest.TestCase):
         * alignof(long long) == 8
         """
 
-        def side_effect_ctypes_sizeof(value):
-            type_to_size = {
-                ctypes.c_longlong: 8,
-                ctypes.c_long: 8,
-                ctypes.c_uint8: 1,
-                ctypes.c_uint16: 2,
-                ctypes.c_uint32: 4,
-                ctypes.c_uint64: 8,
-            }
-            return type_to_size[value]
-
-        def side_effect_ctypes_alignment(value):
-            type_to_alignment = {
-                ctypes.c_longlong: 8,
-                ctypes.c_long: 8,
-                ctypes.c_uint8: 1,
-                ctypes.c_uint16: 2,
-                ctypes.c_uint32: 4,
-                ctypes.c_uint64: 8,
-            }
-            return type_to_alignment[value]
-
-        ctypes_sizeof.side_effect = side_effect_ctypes_sizeof
-        ctypes_alignment.side_effect = side_effect_ctypes_alignment
-
-        fields = [
-            ("opcode", ctypes.c_uint32),
-            ("flags", ctypes.c_uint32),
-            ("count", ctypes.c_uint32),
-            ("ival1_tv_sec", ctypes.c_long),
-            ("ival1_tv_usec", ctypes.c_long),
-            ("ival2_tv_sec", ctypes.c_long),
-            ("ival2_tv_usec", ctypes.c_long),
-            ("can_id", ctypes.c_uint32),
-            ("nframes", ctypes.c_uint32),
-        ]
-        BcmMsgHead = bcm_header_factory(fields)
-
-        expected_fields = [
-            ("opcode", ctypes.c_uint32),
-            ("flags", ctypes.c_uint32),
-            ("count", ctypes.c_uint32),
-            # We expect 4 bytes of padding
-            ("pad_0", ctypes.c_uint8),
-            ("pad_1", ctypes.c_uint8),
-            ("pad_2", ctypes.c_uint8),
-            ("pad_3", ctypes.c_uint8),
-            ("ival1_tv_sec", ctypes.c_long),
-            ("ival1_tv_usec", ctypes.c_long),
-            ("ival2_tv_sec", ctypes.c_long),
-            ("ival2_tv_usec", ctypes.c_long),
-            ("can_id", ctypes.c_uint32),
-            ("nframes", ctypes.c_uint32),
-        ]
-        self.assertEqual(expected_fields, BcmMsgHead._fields_)
+        assert BcmMsgHead.opcode.offset == 0
+        assert BcmMsgHead.flags.offset == 4
+        assert BcmMsgHead.count.offset == 8
+        assert BcmMsgHead.ival1_tv_sec.offset == 16
+        assert BcmMsgHead.ival1_tv_usec.offset == 24
+        assert BcmMsgHead.ival2_tv_sec.offset == 32
+        assert BcmMsgHead.ival2_tv_usec.offset == 40
+        assert BcmMsgHead.can_id.offset == 48
+        assert BcmMsgHead.nframes.offset == 52
+        assert BcmMsgHead.frames.offset == 56
+        assert ctypes.sizeof(BcmMsgHead) == 56
 
     @unittest.skipIf(
         not (

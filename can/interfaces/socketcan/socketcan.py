@@ -77,6 +77,7 @@ from can.interfaces.socketcan.utils import pack_filters, find_available_interfac
 #     	struct can_frame frames[0];
 #     };
 class BcmMsgHead(ctypes.Structure):
+    _pack_ = 8
     _fields_ = [
         ("opcode", ctypes.c_uint32),
         ("flags", ctypes.c_uint32),
