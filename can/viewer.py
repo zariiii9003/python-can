@@ -41,15 +41,20 @@ from .logger import (
 
 logger = logging.getLogger("can.serial")
 
-try:
+if sys.platform == "win32":
+    try:
+        import curses
+        import curses.wrapper
+        from curses.ascii import ESC as KEY_ESC, SP as KEY_SPACE  # type: ignore
+    except ImportError:
+        # Probably on Windows while windows-curses is not installed (e.g. in PyPy)
+        logger.warning(
+            "You won't be able to use the viewer program without curses installed!"
+        )
+        curses = None  # type: ignore
+else:
     import curses
     from curses.ascii import ESC as KEY_ESC, SP as KEY_SPACE
-except ImportError:
-    # Probably on Windows while windows-curses is not installed (e.g. in PyPy)
-    logger.warning(
-        "You won't be able to use the viewer program without curses installed!"
-    )
-    curses = None  # type: ignore
 
 
 class CanViewer:  # pylint: disable=too-many-instance-attributes
