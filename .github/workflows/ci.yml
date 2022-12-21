@@ -40,7 +40,7 @@ jobs:
         pip install tox
     - name: Test with pytest via tox
       run: |
-        tox -e gh
+        tox -rvv -e gh
 
     - name: Coveralls Parallel
       uses: coverallsapp/github-action@master
