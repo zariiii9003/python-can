@@ -15,7 +15,7 @@ from setuptools import setup, find_packages
 
 logging.basicConfig(level=logging.WARNING)
 
-with open("can/__init__.py", encoding="utf-8") as fd:
+with open("src/can/__init__.py", encoding="utf-8") as fd:
     version = re.search(
         r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE
     ).group(1)
@@ -78,16 +78,12 @@ setup(
         "Topic :: Utilities",
     ],
     version=version,
-    packages=find_packages(exclude=["test*", "doc", "scripts", "examples"]),
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     scripts=list(filter(isfile, (join("scripts/", f) for f in listdir("scripts/")))),
     author="python-can contributors",
     license="LGPL v3",
-    package_data={
-        "": ["README.rst", "CONTRIBUTORS.txt", "LICENSE.txt", "CHANGELOG.md"],
-        "doc": ["*.*"],
-        "examples": ["*.py"],
-        "can": ["py.typed"],
-    },
+    package_data={"can": ["py.typed"]},
     # Installation
     # see https://www.python.org/dev/peps/pep-0345/#version-specifiers
     python_requires=">=3.7",
