@@ -1,6 +1,18 @@
+import importlib
+import inspect
 from unittest.mock import patch
 
 import can
+
+
+def test_bus_channel_arg():
+    """Ensure that all available bus classes can be imported and
+    that ``channel`` is always the first argument."""
+    for module_name, class_name in can.interface.BACKENDS.values():
+        module = importlib.import_module(module_name)
+        bus_class = getattr(module, class_name)
+        signature = inspect.signature(bus_class)
+        assert next(signature.parameters.__iter__()) == "channel"
 
 
 def test_bus_ignore_config():
