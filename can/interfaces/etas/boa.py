@@ -8,10 +8,10 @@ try:
     _oci = ctypes.windll.LoadLibrary("dll-ocdProxy")
 except FileNotFoundError:
     # try to load libraries with hardcoded paths
-    if ctypes.sizeof(ctypes.c_voidp) == 4:
+    if ctypes.sizeof(ctypes.c_void_p) == 4:
         # 32 bit
         path = "C:/Program Files (x86)/ETAS/BOA_V2/Bin/Win32/Dll/Framework/"
-    elif ctypes.sizeof(ctypes.c_voidp) == 8:
+    elif ctypes.sizeof(ctypes.c_void_p) == 8:
         # 64 bit
         path = "C:/Program Files/ETAS/BOA_V2/Bin/x64/Dll/Framework/"
     _csi = ctypes.windll.LoadLibrary(path + "dll-csiBind")

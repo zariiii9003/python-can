@@ -321,8 +321,9 @@ class BasicTestUdpMulticastBusIPv6(Back2BackTestCase):
 
 TEST_INTERFACE_ETAS = False
 try:
-    bus_class = can.interface._get_class_for_interface("etas")
-    TEST_INTERFACE_ETAS = True
+    from can.interfaces.etas import boa
+
+    TEST_INTERFACE_ETAS = boa is not None
 except can.exceptions.CanInterfaceNotImplementedError:
     pass
 
