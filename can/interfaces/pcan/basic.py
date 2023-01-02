@@ -13,10 +13,11 @@
 #  Copyright (C) 1999-2021  PEAK-System Technik GmbH, Darmstadt
 #  more Info at http://www.peak-system.com
 
+# pylint: disable=too-many-lines,line-too-long
+
 # Module Imports
-from ctypes import *
+import ctypes
 from ctypes.util import find_library
-from string import *
 import platform
 
 import logging
@@ -31,16 +32,18 @@ logger = logging.getLogger("can.pcan")
 # Type definitions
 # ///////////////////////////////////////////////////////////
 
-TPCANHandle = c_ushort  # Represents a PCAN hardware channel handle
+TPCANHandle = ctypes.c_ushort  # Represents a PCAN hardware channel handle
 TPCANStatus = int  # Represents a PCAN status/error code
-TPCANParameter = c_ubyte  # Represents a PCAN parameter to be read or set
-TPCANDevice = c_ubyte  # Represents a PCAN device
-TPCANMessageType = c_ubyte  # Represents the type of a PCAN message
-TPCANType = c_ubyte  # Represents the type of PCAN hardware to be initialized
-TPCANMode = c_ubyte  # Represents a PCAN filter mode
-TPCANBaudrate = c_ushort  # Represents a PCAN Baud rate register value
-TPCANBitrateFD = c_char_p  # Represents a PCAN-FD bit rate string
-TPCANTimestampFD = c_ulonglong  # Represents a timestamp of a received PCAN FD message
+TPCANParameter = ctypes.c_ubyte  # Represents a PCAN parameter to be read or set
+TPCANDevice = ctypes.c_ubyte  # Represents a PCAN device
+TPCANMessageType = ctypes.c_ubyte  # Represents the type of a PCAN message
+TPCANType = ctypes.c_ubyte  # Represents the type of PCAN hardware to be initialized
+TPCANMode = ctypes.c_ubyte  # Represents a PCAN filter mode
+TPCANBaudrate = ctypes.c_ushort  # Represents a PCAN Baud rate register value
+TPCANBitrateFD = ctypes.c_char_p  # Represents a PCAN-FD bit rate string
+TPCANTimestampFD = (
+    ctypes.c_ulonglong
+)  # Represents a timestamp of a received PCAN FD message
 
 # ///////////////////////////////////////////////////////////
 # Value definitions
@@ -486,53 +489,53 @@ PCAN_DICT_STATUS = {
 
 # Represents a PCAN message
 #
-class TPCANMsg(Structure):
+class TPCANMsg(ctypes.Structure):
     """
     Represents a PCAN message
     """
 
     _fields_ = [
-        ("ID", c_uint),  # 11/29-bit message identifier
+        ("ID", ctypes.c_uint),  # 11/29-bit message identifier
         ("MSGTYPE", TPCANMessageType),  # Type of the message
-        ("LEN", c_ubyte),  # Data Length Code of the message (0..8)
-        ("DATA", c_ubyte * 8),
+        ("LEN", ctypes.c_ubyte),  # Data Length Code of the message (0..8)
+        ("DATA", ctypes.c_ubyte * 8),
     ]  # Data of the message (DATA[0]..DATA[7])
 
 
 # Represents a timestamp of a received PCAN message
 # Total Microseconds = micros + 1000 * millis + 0x100000000 * 1000 * millis_overflow
 #
-class TPCANTimestamp(Structure):
+class TPCANTimestamp(ctypes.Structure):
     """
     Represents a timestamp of a received PCAN message
     Total Microseconds = micros + 1000 * millis + 0x100000000 * 1000 * millis_overflow
     """
 
     _fields_ = [
-        ("millis", c_uint),  # Base-value: milliseconds: 0.. 2^32-1
-        ("millis_overflow", c_ushort),  # Roll-arounds of millis
-        ("micros", c_ushort),
+        ("millis", ctypes.c_uint),  # Base-value: milliseconds: 0.. 2^32-1
+        ("millis_overflow", ctypes.c_ushort),  # Roll-arounds of millis
+        ("micros", ctypes.c_ushort),
     ]  # Microseconds: 0..999
 
 
 # Represents a PCAN message from a FD capable hardware
 #
-class TPCANMsgFD(Structure):
+class TPCANMsgFD(ctypes.Structure):
     """
     Represents a PCAN message
     """
 
     _fields_ = [
-        ("ID", c_uint),  # 11/29-bit message identifier
+        ("ID", ctypes.c_uint),  # 11/29-bit message identifier
         ("MSGTYPE", TPCANMessageType),  # Type of the message
-        ("DLC", c_ubyte),  # Data Length Code of the message (0..15)
-        ("DATA", c_ubyte * 64),
+        ("DLC", ctypes.c_ubyte),  # Data Length Code of the message (0..15)
+        ("DATA", ctypes.c_ubyte * 64),
     ]  # Data of the message (DATA[0]..DATA[63])
 
 
 # Describes an available PCAN channel
 #
-class TPCANChannelInformation(Structure):
+class TPCANChannelInformation(ctypes.Structure):
     """
     Describes an available PCAN channel
     """
@@ -540,11 +543,11 @@ class TPCANChannelInformation(Structure):
     _fields_ = [
         ("channel_handle", TPCANHandle),  # PCAN channel handle
         ("device_type", TPCANDevice),  # Kind of PCAN device
-        ("controller_number", c_ubyte),  # CAN-Controller number
-        ("device_features", c_uint),  # Device capabilities flag (see FEATURE_*)
-        ("device_name", c_char * MAX_LENGTH_HARDWARE_NAME),  # Device name
-        ("device_id", c_uint),  # Device number
-        ("channel_condition", c_uint),
+        ("controller_number", ctypes.c_ubyte),  # CAN-Controller number
+        ("device_features", ctypes.c_uint),  # Device capabilities flag (see FEATURE_*)
+        ("device_name", ctypes.c_char * MAX_LENGTH_HARDWARE_NAME),  # Device name
+        ("device_id", ctypes.c_uint),  # Device number
+        ("channel_condition", ctypes.c_uint),
     ]  # Availability status of a PCAN-Channel
 
 
@@ -659,7 +662,9 @@ class PCANBasic:
         if platform.system() == "Windows":
             # Loads the API on Windows
             _dll_path = find_library("PCANBasic")
-            self.__m_dllBasic = windll.LoadLibrary(_dll_path) if _dll_path else None
+            self.__m_dllBasic = (
+                ctypes.windll.LoadLibrary(_dll_path) if _dll_path else None
+            )
             aReg = winreg.ConnectRegistry(None, winreg.HKEY_LOCAL_MACHINE)
             try:
                 aKey = winreg.OpenKey(aReg, r"SOFTWARE\PEAK-System\PEAK-Drivers")
@@ -669,16 +674,16 @@ class PCANBasic:
             finally:
                 winreg.CloseKey(aReg)
         elif "CYGWIN" in platform.system():
-            self.__m_dllBasic = cdll.LoadLibrary("PCANBasic.dll")
+            self.__m_dllBasic = ctypes.cdll.LoadLibrary("PCANBasic.dll")
             # Unfortunately cygwin python has no winreg module, so we can't
             # check for the registry key.
         elif platform.system() == "Linux":
             # Loads the API on Linux
-            self.__m_dllBasic = cdll.LoadLibrary("libpcanbasic.so")
+            self.__m_dllBasic = ctypes.cdll.LoadLibrary("libpcanbasic.so")
         elif platform.system() == "Darwin":
-            self.__m_dllBasic = cdll.LoadLibrary(find_library("libPCBUSB.dylib"))
+            self.__m_dllBasic = ctypes.cdll.LoadLibrary(find_library("libPCBUSB.dylib"))
         else:
-            self.__m_dllBasic = cdll.LoadLibrary("libpcanbasic.so")
+            self.__m_dllBasic = ctypes.cdll.LoadLibrary("libpcanbasic.so")
         if self.__m_dllBasic is None:
             logger.error("Exception: The PCAN-Basic DLL couldn't be loaded!")
 
@@ -689,8 +694,8 @@ class PCANBasic:
         Channel,
         Btr0Btr1,
         HwType=TPCANType(0),
-        IOPort=c_uint(0),
-        Interrupt=c_ushort(0),
+        IOPort=ctypes.c_uint(0),
+        Interrupt=ctypes.c_ushort(0),
     ):
 
         """Initializes a PCAN Channel
@@ -831,7 +836,9 @@ class PCANBasic:
         try:
             msg = TPCANMsg()
             timestamp = TPCANTimestamp()
-            res = self.__m_dllBasic.CAN_Read(Channel, byref(msg), byref(timestamp))
+            res = self.__m_dllBasic.CAN_Read(
+                Channel, ctypes.byref(msg), ctypes.byref(timestamp)
+            )
             return TPCANStatus(res), msg, timestamp
         except:
             logger.error("Exception on PCANBasic.Read")
@@ -860,7 +867,9 @@ class PCANBasic:
         try:
             msg = TPCANMsgFD()
             timestamp = TPCANTimestampFD()
-            res = self.__m_dllBasic.CAN_ReadFD(Channel, byref(msg), byref(timestamp))
+            res = self.__m_dllBasic.CAN_ReadFD(
+                Channel, ctypes.byref(msg), ctypes.byref(timestamp)
+            )
             return TPCANStatus(res), msg, timestamp
         except:
             logger.error("Exception on PCANBasic.ReadFD")
@@ -880,7 +889,7 @@ class PCANBasic:
           A TPCANStatus error code
         """
         try:
-            res = self.__m_dllBasic.CAN_Write(Channel, byref(MessageBuffer))
+            res = self.__m_dllBasic.CAN_Write(Channel, ctypes.byref(MessageBuffer))
             return TPCANStatus(res)
         except:
             logger.error("Exception on PCANBasic.Write")
@@ -900,7 +909,7 @@ class PCANBasic:
           A TPCANStatus error code
         """
         try:
-            res = self.__m_dllBasic.CAN_WriteFD(Channel, byref(MessageBuffer))
+            res = self.__m_dllBasic.CAN_WriteFD(Channel, ctypes.byref(MessageBuffer))
             return TPCANStatus(res)
         except:
             logger.error("Exception on PCANBasic.WriteFD")
@@ -956,29 +965,29 @@ class PCANBasic:
           A tuple with 2 values
         """
         try:
-            if (
-                Parameter == PCAN_API_VERSION
-                or Parameter == PCAN_HARDWARE_NAME
-                or Parameter == PCAN_CHANNEL_VERSION
-                or Parameter == PCAN_LOG_LOCATION
-                or Parameter == PCAN_TRACE_LOCATION
-                or Parameter == PCAN_BITRATE_INFO_FD
-                or Parameter == PCAN_IP_ADDRESS
-                or Parameter == PCAN_FIRMWARE_VERSION
+            if Parameter in (
+                PCAN_API_VERSION,
+                PCAN_HARDWARE_NAME,
+                PCAN_CHANNEL_VERSION,
+                PCAN_LOG_LOCATION,
+                PCAN_TRACE_LOCATION,
+                PCAN_BITRATE_INFO_FD,
+                PCAN_IP_ADDRESS,
+                PCAN_FIRMWARE_VERSION,
             ):
-                mybuffer = create_string_buffer(256)
+                mybuffer = ctypes.create_string_buffer(256)
 
             elif Parameter == PCAN_ATTACHED_CHANNELS:
                 res = self.GetValue(Channel, PCAN_ATTACHED_CHANNELS_COUNT)
                 if TPCANStatus(res[0]) != PCAN_ERROR_OK:
-                    return (TPCANStatus(res[0]),)
+                    return TPCANStatus(res[0]), None
                 mybuffer = (TPCANChannelInformation * res[1])()
 
             else:
-                mybuffer = c_int(0)
+                mybuffer = ctypes.c_int(0)
 
             res = self.__m_dllBasic.CAN_GetValue(
-                Channel, Parameter, byref(mybuffer), sizeof(mybuffer)
+                Channel, Parameter, ctypes.byref(mybuffer), ctypes.sizeof(mybuffer)
             )
             if Parameter == PCAN_ATTACHED_CHANNELS:
                 return TPCANStatus(res), mybuffer
@@ -1011,23 +1020,23 @@ class PCANBasic:
           A TPCANStatus error code
         """
         try:
-            if (
-                Parameter == PCAN_LOG_LOCATION
-                or Parameter == PCAN_LOG_TEXT
-                or Parameter == PCAN_TRACE_LOCATION
+            if Parameter in (
+                PCAN_LOG_LOCATION,
+                PCAN_LOG_TEXT,
+                PCAN_TRACE_LOCATION,
             ):
-                mybuffer = create_string_buffer(256)
+                mybuffer = ctypes.create_string_buffer(256)
             else:
-                mybuffer = c_int(0)
+                mybuffer = ctypes.c_int(0)
 
             mybuffer.value = Buffer
             res = self.__m_dllBasic.CAN_SetValue(
-                Channel, Parameter, byref(mybuffer), sizeof(mybuffer)
+                Channel, Parameter, ctypes.byref(mybuffer), ctypes.sizeof(mybuffer)
             )
             return TPCANStatus(res)
-        except:
+        except Exception as exc:
             logger.error("Exception on PCANBasic.SetValue")
-            raise
+            raise exc from None
 
     def GetErrorText(self, Error, Language=0):
 
@@ -1051,8 +1060,10 @@ class PCANBasic:
           A tuple with 2 values
         """
         try:
-            mybuffer = create_string_buffer(256)
-            res = self.__m_dllBasic.CAN_GetErrorText(Error, Language, byref(mybuffer))
+            mybuffer = ctypes.create_string_buffer(256)
+            res = self.__m_dllBasic.CAN_GetErrorText(
+                Error, Language, ctypes.byref(mybuffer)
+            )
             return TPCANStatus(res), mybuffer.value
         except:
             logger.error("Exception on PCANBasic.GetErrorText")
@@ -1077,7 +1088,9 @@ class PCANBasic:
         """
         try:
             mybuffer = TPCANHandle(0)
-            res = self.__m_dllBasic.CAN_LookUpChannel(Parameters, byref(mybuffer))
+            res = self.__m_dllBasic.CAN_LookUpChannel(
+                Parameters, ctypes.byref(mybuffer)
+            )
             return TPCANStatus(res), mybuffer
         except:
             logger.error("Exception on PCANBasic.LookUpChannel")

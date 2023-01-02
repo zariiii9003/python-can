@@ -96,6 +96,7 @@ jobs:
         doc/conf.py \
         scripts/**.py \
         examples/**.py \
+        can/interfaces/pcan \
         can/interfaces/socketcan \
         can/interfaces/vector
 

@@ -75,7 +75,7 @@ try:
         boottimeEpoch = 0
     else:
         boottimeEpoch = (uptime.boottime() - datetime.fromtimestamp(0)).total_seconds()
-except ImportError as error:
+except ImportError:
     log.warning(
         "uptime library not available, timestamps are relative to boot time and not to Epoch UTC",
         exc_info=True,
@@ -89,25 +89,16 @@ try:
 
     HAS_EVENTS = True
 except ImportError:
-    try:
-        # Try pywin32 package
-        from win32event import CreateEvent
-        from win32event import WaitForSingleObject, WAIT_OBJECT_0, INFINITE
-
-        HAS_EVENTS = True
-    except ImportError:
-        # Use polling instead
-        HAS_EVENTS = False
+    HAS_EVENTS = False
 
 
-class PcanBus(BusABC):
+class PcanBus(BusABC):  # pylint: disable=abstract-method
     def __init__(
         self,
         channel="PCAN_USBBUS1",
         device_id=None,
         state=BusState.ACTIVE,
         bitrate=500000,
-        *args,
         **kwargs,
     ):
         """A PCAN USB interface to CAN.
@@ -244,9 +235,9 @@ class PcanBus(BusABC):
         if self.fd:
             f_clock_val = kwargs.get("f_clock", None)
             if f_clock_val is None:
-                f_clock = "{}={}".format("f_clock_mhz", kwargs.get("f_clock_mhz", None))
+                f_clock = f"f_clock_mhz={kwargs.get('f_clock_mhz', None)}"
             else:
-                f_clock = "{}={}".format("f_clock", kwargs.get("f_clock", None))
+                f_clock = f"f_clock={kwargs.get('f_clock', None)}"
 
             fd_parameters_values = [f_clock] + [
                 f"{key}={kwargs.get(key, None)}"
@@ -278,7 +269,8 @@ class PcanBus(BusABC):
                 # TODO Remove Filter when MACCan actually supports it:
                 #  https://github.com/mac-can/PCBUSB-Library/
                 log.debug(
-                    "Ignoring error. PCAN_ALLOW_ERROR_FRAMES is still unsupported by OSX Library PCANUSB v0.10"
+                    "Ignoring error. PCAN_ALLOW_ERROR_FRAMES is "
+                    "still unsupported by OSX Library PCANUSB v0.10"
                 )
 
         if kwargs.get("auto_reset", False):
@@ -297,7 +289,7 @@ class PcanBus(BusABC):
             if result != PCAN_ERROR_OK:
                 raise PcanCanInitializationError(self._get_formatted_error(result))
 
-        super().__init__(channel=channel, state=state, bitrate=bitrate, *args, **kwargs)
+        super().__init__(channel=channel, state=state, bitrate=bitrate, **kwargs)
 
     def _find_channel_by_dev_id(self, device_id):
         """
@@ -350,8 +342,9 @@ class PcanBus(BusABC):
             for b in bits(error):
                 stsReturn = self.m_objPCANBasic.GetErrorText(b, 0x9)
                 if stsReturn[0] != PCAN_ERROR_OK:
-                    text = "An error occurred. Error-code's text ({:X}h) couldn't be retrieved".format(
-                        error
+                    text = (
+                        "An error occurred. Error-code's text "
+                        f"({error:X}h) couldn't be retrieved"
                     )
                 else:
                     text = stsReturn[1].decode("utf-8", errors="replace")
@@ -367,7 +360,7 @@ class PcanBus(BusABC):
     def get_api_version(self):
         error, value = self.m_objPCANBasic.GetValue(PCAN_NONEBUS, PCAN_API_VERSION)
         if error != PCAN_ERROR_OK:
-            raise CanInitializationError(f"Failed to read pcan basic api version")
+            raise CanInitializationError("Failed to read pcan basic api version")
 
         return version.parse(value.decode("ascii"))
 
@@ -375,8 +368,10 @@ class PcanBus(BusABC):
         apv = self.get_api_version()
         if apv < MIN_PCAN_API_VERSION:
             log.warning(
-                f"Minimum version of pcan api is {MIN_PCAN_API_VERSION}."
-                f" Installed version is {apv}. Consider upgrade of pcan basic package"
+                "Minimum version of pcan api is %s. Installed version is %s. "
+                "Consider upgrade of pcan basic package",
+                MIN_PCAN_API_VERSION,
+                apv,
             )
 
     def status(self):
@@ -602,7 +597,7 @@ class PcanBus(BusABC):
     @state.setter
     def state(self, new_state):
         # declare here, which is called by __init__()
-        self._state = new_state  # pylint: disable=attribute-defined-outside-init
+        self._state = new_state
 
         if new_state is BusState.ACTIVE:
             self.m_objPCANBasic.SetValue(
@@ -610,9 +605,11 @@ class PcanBus(BusABC):
             )
 
         elif new_state is BusState.PASSIVE:
-            # When this mode is set, the CAN controller does not take part on active events (eg. transmit CAN messages)
-            # but stays in a passive mode (CAN monitor), in which it can analyse the traffic on the CAN bus used by a
-            # PCAN channel. See also the Philips Data Sheet "SJA1000 Stand-alone CAN controller".
+            # When this mode is set, the CAN controller does not take part on
+            # active events (eg. transmit CAN messages) but stays in a passive
+            # mode (CAN monitor), in which it can analyse the traffic on the
+            # CAN bus used by a PCAN channel. See also the Philips Data Sheet
+            # "SJA1000 Stand-alone CAN controller".
             self.m_objPCANBasic.SetValue(
                 self.m_PcanHandle, PCAN_LISTEN_ONLY, PCAN_PARAMETER_ON
             )
