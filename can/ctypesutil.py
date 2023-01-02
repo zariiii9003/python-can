@@ -79,7 +79,7 @@ class CLibrary(_LibBase):
 if sys.platform == "win32":
     HRESULT = ctypes.HRESULT
 
-elif sys.platform == "cygwin":
+else:
 
     class HRESULT(ctypes.c_long):
         pass
