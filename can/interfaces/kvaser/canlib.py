@@ -326,8 +326,8 @@ def init_kvaser_library():
             log.debug("Initializing Kvaser CAN library")
             canInitializeLibrary()
             log.debug("CAN library initialized")
-        except Exception:
-            log.warning("Kvaser canlib could not be initialized.")
+        except Exception as exc:  # pylint: disable=broad-except
+            log.warning("Kvaser canlib could not be initialized: %s", exc)
 
 
 DRIVER_MODE_SILENT = False
@@ -355,7 +355,7 @@ BITRATE_FD = {
 }
 
 
-class KvaserBus(BusABC):
+class KvaserBus(BusABC):  # pylint: disable=abstract-method
     """
     The CAN Bus implemented for the Kvaser interface.
     """
@@ -410,8 +410,8 @@ class KvaserBus(BusABC):
 
         """
 
-        log.info(f"CAN Filters: {can_filters}")
-        log.info(f"Got configuration of: {kwargs}")
+        log.info("CAN Filters: %s", can_filters)
+        log.info("Got configuration of: %s", kwargs)
         bitrate = kwargs.get("bitrate", 500000)
         tseg1 = kwargs.get("tseg1", 0)
         tseg2 = kwargs.get("tseg2", 0)
@@ -427,7 +427,7 @@ class KvaserBus(BusABC):
         try:
             channel = int(channel)
         except ValueError:
-            raise ValueError("channel must be an integer")
+            raise ValueError("channel must be an integer") from None
         self.channel = channel
 
         log.debug("Initialising bus instance")
@@ -514,7 +514,7 @@ class KvaserBus(BusABC):
                 kvReadTimer(self._read_handle, ctypes.byref(timer))
                 self._timestamp_offset = time.time() - (timer.value * TIMESTAMP_FACTOR)
 
-        except Exception as exc:
+        except CANLIBInitializationError as exc:
             # timer is usually close to 0
             log.info(str(exc))
             self._timestamp_offset = time.time() - (timer.value * TIMESTAMP_FACTOR)
@@ -658,6 +658,7 @@ class KvaserBus(BusABC):
         canClose(self._write_handle)
 
     def get_stats(self) -> structures.BusStatistics:
+        # pylint: disable=line-too-long
         """Retrieves the bus statistics.
 
         Use like so:
