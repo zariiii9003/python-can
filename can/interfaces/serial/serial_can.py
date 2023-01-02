@@ -54,7 +54,6 @@ class SerialBus(BusABC):
         baudrate: int = 115200,
         timeout: float = 0.1,
         rtscts: bool = False,
-        *args,
         **kwargs,
     ) -> None:
         """
@@ -97,7 +96,7 @@ class SerialBus(BusABC):
                 "could not create the serial device"
             ) from error
 
-        super().__init__(channel, *args, **kwargs)
+        super().__init__(channel, **kwargs)
 
     def shutdown(self) -> None:
         """
@@ -128,13 +127,13 @@ class SerialBus(BusABC):
         try:
             timestamp = struct.pack("<I", int(msg.timestamp * 1000))
         except struct.error:
-            raise ValueError("Timestamp is out of range")
+            raise ValueError("Timestamp is out of range") from None
 
         # Pack arbitration ID
         try:
             arbitration_id = struct.pack("<I", msg.arbitration_id)
         except struct.error:
-            raise ValueError("Arbitration ID is out of range")
+            raise ValueError("Arbitration ID is out of range") from None
 
         # Assemble message
         byte_msg = bytearray()
@@ -220,7 +219,7 @@ class SerialBus(BusABC):
         except io.UnsupportedOperation:
             raise NotImplementedError(
                 "fileno is not implemented using current CAN bus on this platform"
-            )
+            ) from None
         except Exception as exception:
             raise CanOperationError("Cannot fetch fileno") from exception
 
