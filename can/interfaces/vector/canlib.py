@@ -4,6 +4,8 @@ Ctypes wrapper module for Vector CAN Interface on win32/win64 systems.
 Authors: Julien Grave <grave.jul@gmail.com>, Christian Sandberg
 """
 
+# pylint: disable=too-many-lines
+
 # Import Standard Python Modules
 # ==============================
 import ctypes
@@ -59,11 +61,11 @@ from . import xldefine, xlclass
 xldriver: Optional[ModuleType] = None
 try:
     from . import xldriver
-except Exception as exc:
-    LOG.warning("Could not import vxlapi: %s", exc)
+except (TypeError, AttributeError) as _exc:
+    LOG.warning("Could not import vxlapi: %s", _exc)
 
 
-class VectorBus(BusABC):
+class VectorBus(BusABC):  # pylint: disable=too-many-instance-attributes,abstract-method
     """The CAN Bus implemented for the Vector interface."""
 
     deprecated_args = dict(
@@ -76,7 +78,7 @@ class VectorBus(BusABC):
     )
 
     @deprecated_args_alias(**deprecated_args)
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         channel: Union[int, Sequence[int], str],
         can_filters: Optional[CanFilters] = None,
@@ -171,9 +173,9 @@ class VectorBus(BusABC):
             )
 
         self._app_name = app_name.encode() if app_name is not None else b""
-        self.channel_info = "Application {}: {}".format(
-            app_name,
-            ", ".join(f"CAN {ch + 1}" for ch in self.channels),
+        self.channel_info = (
+            f"Application {app_name}: "
+            f"{', '.join(f'CAN {ch + 1}' for ch in self.channels)}"
         )
 
         channel_configs = get_channel_configs()
@@ -183,18 +185,18 @@ class VectorBus(BusABC):
         self.channel_masks: Dict[int, int] = {}
         self.index_to_channel: Dict[int, int] = {}
 
-        for channel in self.channels:
+        for _channel in self.channels:
             channel_index = self._find_global_channel_idx(
-                channel=channel,
+                channel=_channel,
                 serial=serial,
                 app_name=app_name,
                 channel_configs=channel_configs,
             )
-            LOG.debug("Channel index %d found", channel)
+            LOG.debug("Channel index %d found", _channel)
 
             channel_mask = 1 << channel_index
-            self.channel_masks[channel] = channel_mask
-            self.index_to_channel[channel_index] = channel
+            self.channel_masks[_channel] = channel_mask
+            self.index_to_channel[channel_index] = _channel
             self.mask |= channel_mask
 
         permission_mask = xlclass.XLaccess()
@@ -227,11 +229,11 @@ class VectorBus(BusABC):
         )
 
         # set CAN settings
-        for channel in self.channels:
-            if self._has_init_access(channel):
+        for _channel in self.channels:
+            if self._has_init_access(_channel):
                 if fd:
                     self._set_bitrate_canfd(
-                        channel=channel,
+                        channel=_channel,
                         bitrate=bitrate,
                         data_bitrate=data_bitrate,
                         sjw_abr=sjw_abr,
@@ -242,15 +244,15 @@ class VectorBus(BusABC):
                         tseg2_dbr=tseg2_dbr,
                     )
                 elif bitrate:
-                    self._set_bitrate_can(channel=channel, bitrate=bitrate)
+                    self._set_bitrate_can(channel=_channel, bitrate=bitrate)
 
         # Check CAN settings
-        for channel in self.channels:
+        for _channel in self.channels:
             if kwargs.get("_testing", False):
                 # avoid check if xldriver is mocked for testing
                 break
 
-            bus_params = self._read_bus_params(channel)
+            bus_params = self._read_bus_params(_channel)
             if fd:
                 _canfd = bus_params.canfd
                 if not all(
@@ -284,7 +286,7 @@ class VectorBus(BusABC):
                     ]
                 ):
                     raise CanInitializationError(
-                        f"The requested CAN settings could not be set for channel {channel}. "
+                        f"The requested CAN settings could not be set for channel {_channel}. "
                         f"Another application might have set incompatible settings. "
                         f"These are the currently active settings: {_can._asdict()}"
                     )
@@ -303,9 +305,9 @@ class VectorBus(BusABC):
             self.xldriver.xlActivateChannel(
                 self.port_handle, self.mask, xldefine.XL_BusTypes.XL_BUS_TYPE_CAN, 0
             )
-        except VectorOperationError as error:
+        except VectorInitializationError as error:
             self.shutdown()
-            raise VectorInitializationError.from_generic(error) from None
+            raise error from None
 
         # Calculate time offset for absolute timestamps
         offset = xlclass.XLuint64()
@@ -414,7 +416,7 @@ class VectorBus(BusABC):
         kwargs = [sjw, tseg1, tseg2]
         if any(kwargs) and not all(kwargs):
             raise ValueError(
-                f"Either all of sjw, tseg1, tseg2 must be set or none of them."
+                "Either all of sjw, tseg1, tseg2 must be set or none of them."
             )
 
         # set parameters if channel has init access
@@ -876,7 +878,7 @@ class VectorBus(BusABC):
         return xldefine.XL_HardwareType(hw_type.value), hw_index.value, hw_channel.value
 
     @staticmethod
-    def set_application_config(
+    def set_application_config(  # pylint: disable=unused-argument
         app_name: str,
         app_channel: int,
         hw_type: xldefine.XL_HardwareType,

@@ -8,8 +8,10 @@ Authors: Julien Grave <grave.jul@gmail.com>, Christian Sandberg
 # Import Standard Python Modules
 # ==============================
 import ctypes
+from ctypes.util import find_library
 import logging
 import platform
+
 from .exceptions import VectorOperationError, VectorInitializationError
 
 # Define Module Logger
@@ -22,7 +24,7 @@ from . import xlclass
 
 # Load Windows DLL
 DLL_NAME = "vxlapi64" if platform.architecture()[0] == "64bit" else "vxlapi"
-_xlapi_dll = ctypes.windll.LoadLibrary(DLL_NAME)
+_xlapi_dll = ctypes.windll.LoadLibrary(find_library(DLL_NAME))
 
 
 # ctypes wrapping for API functions
@@ -31,7 +33,7 @@ xlGetErrorString.argtypes = [xlclass.XLstatus]
 xlGetErrorString.restype = xlclass.XLstringType
 
 
-def check_status_operation(result, function, arguments):
+def check_status_operation(result, function, _arguments):
     """Check the status and raise a :class:`VectorOperationError` on error."""
     if result > 0:
         raise VectorOperationError(
@@ -40,7 +42,7 @@ def check_status_operation(result, function, arguments):
     return result
 
 
-def check_status_initialization(result, function, arguments):
+def check_status_initialization(result, function, _arguments):
     """Check the status and raise a :class:`VectorInitializationError` on error."""
     if result > 0:
         raise VectorInitializationError(
@@ -155,7 +157,7 @@ xlActivateChannel.argtypes = [
     ctypes.c_uint,
 ]
 xlActivateChannel.restype = xlclass.XLstatus
-xlActivateChannel.errcheck = check_status_operation
+xlActivateChannel.errcheck = check_status_initialization
 
 xlDeactivateChannel = _xlapi_dll.xlDeactivateChannel
 xlDeactivateChannel.argtypes = [xlclass.XLportHandle, xlclass.XLaccess]

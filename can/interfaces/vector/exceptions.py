@@ -19,10 +19,12 @@ class VectorError(CanError):
 class VectorInitializationError(VectorError, CanInitializationError):
     @staticmethod
     def from_generic(error: VectorError) -> "VectorInitializationError":
-        return VectorInitializationError(*error._args)
+        return VectorInitializationError(
+            *error._args  # pylint: disable=protected-access
+        )
 
 
 class VectorOperationError(VectorError, CanOperationError):
     @staticmethod
     def from_generic(error: VectorError) -> "VectorOperationError":
-        return VectorOperationError(*error._args)
+        return VectorOperationError(*error._args)  # pylint: disable=protected-access

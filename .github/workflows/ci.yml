@@ -96,7 +96,8 @@ jobs:
         doc/conf.py \
         scripts/**.py \
         examples/**.py \
-        can/interfaces/socketcan
+        can/interfaces/socketcan \
+        can/interfaces/vector
 
   format:
     runs-on: ubuntu-latest
