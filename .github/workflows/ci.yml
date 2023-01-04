@@ -90,17 +90,18 @@ jobs:
     - name: pylint
       run: |
         pylint --rcfile=.pylintrc \
-        can/**.py \
-        can/io \
         setup.py \
         doc/conf.py \
         scripts/**.py \
         examples/**.py \
+        can/**.py \
+        can/io \
         can/interfaces/kvaser \
         can/interfaces/pcan \
         can/interfaces/serial \
         can/interfaces/socketcan \
-        can/interfaces/vector
+        can/interfaces/vector \
+        can/interfaces/usb2can
 
   format:
     runs-on: ubuntu-latest

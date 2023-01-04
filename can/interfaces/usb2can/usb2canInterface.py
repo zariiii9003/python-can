@@ -61,7 +61,7 @@ def message_convert_rx(message_rx):
     )
 
 
-class Usb2canBus(BusABC):
+class Usb2canBus(BusABC):  # pylint: disable=abstract-method
     """Interface to a USB2CAN Bus.
 
     This interface only works on Windows.
@@ -94,7 +94,6 @@ class Usb2canBus(BusABC):
         channel: Optional[str] = None,
         dll: str = "usb2can.dll",
         flags: int = 0x00000008,
-        *_,
         bitrate: int = 500000,
         serial: Optional[str] = None,
         **kwargs,

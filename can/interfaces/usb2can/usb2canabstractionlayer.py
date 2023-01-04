@@ -3,7 +3,7 @@ This wrapper is for windows or direct access via CANAL API.
 Socket CAN is recommended under Unix/Linux systems.
 """
 
-from ctypes import *
+import ctypes
 from enum import IntEnum
 import logging
 
@@ -14,11 +14,11 @@ from ...typechecking import StringPathLike
 log = logging.getLogger("can.usb2can")
 
 # type definitions
-flags_t = c_ulong
-pConfigureStr = c_char_p
-handle_t = c_long
-timeout_t = c_ulong
-filter_t = c_ulong
+flags_t = ctypes.c_ulong
+pConfigureStr = ctypes.c_char_p
+handle_t = ctypes.c_long
+timeout_t = ctypes.c_ulong
+filter_t = ctypes.c_ulong
 
 # flags mappings
 IS_ERROR_FRAME = 4
@@ -67,39 +67,39 @@ class CanalError(IntEnum):
     COMMUNICATION = 37
 
 
-class CanalStatistics(Structure):
+class CanalStatistics(ctypes.Structure):
     _fields_ = [
-        ("ReceiveFrams", c_ulong),
-        ("TransmistFrams", c_ulong),
-        ("ReceiveData", c_ulong),
-        ("TransmitData", c_ulong),
-        ("Overruns", c_ulong),
-        ("BusWarnings", c_ulong),
-        ("BusOff", c_ulong),
+        ("ReceiveFrams", ctypes.c_ulong),
+        ("TransmistFrams", ctypes.c_ulong),
+        ("ReceiveData", ctypes.c_ulong),
+        ("TransmitData", ctypes.c_ulong),
+        ("Overruns", ctypes.c_ulong),
+        ("BusWarnings", ctypes.c_ulong),
+        ("BusOff", ctypes.c_ulong),
     ]
 
 
 stat = CanalStatistics
 
 
-class CanalStatus(Structure):
+class CanalStatus(ctypes.Structure):
     _fields_ = [
-        ("channel_status", c_ulong),
-        ("lasterrorcode", c_ulong),
-        ("lasterrorsubcode", c_ulong),
-        ("lasterrorstr", c_byte * 80),
+        ("channel_status", ctypes.c_ulong),
+        ("lasterrorcode", ctypes.c_ulong),
+        ("lasterrorsubcode", ctypes.c_ulong),
+        ("lasterrorstr", ctypes.c_byte * 80),
     ]
 
 
 # data type for the CAN Message
-class CanalMsg(Structure):
+class CanalMsg(ctypes.Structure):
     _fields_ = [
-        ("flags", c_ulong),
-        ("obid", c_ulong),
-        ("id", c_ulong),
-        ("sizeData", c_ubyte),
-        ("data", c_ubyte * 8),
-        ("timestamp", c_ulong),
+        ("flags", ctypes.c_ulong),
+        ("obid", ctypes.c_ulong),
+        ("id", ctypes.c_ulong),
+        ("sizeData", ctypes.c_ubyte),
+        ("data", ctypes.c_ubyte * 8),
+        ("timestamp", ctypes.c_ulong),
     ]
 
 
@@ -118,7 +118,7 @@ class Usb2CanAbstractionLayer:
             if the DLL could not be loaded
         """
         try:
-            self.__m_dllBasic = windll.LoadLibrary(dll)
+            self.__m_dllBasic = ctypes.windll.LoadLibrary(dll)
             if self.__m_dllBasic is None:
                 raise Exception("__m_dllBasic is None")
 
@@ -152,7 +152,7 @@ class Usb2CanAbstractionLayer:
             )
         else:
             # any greater-than-zero return value indicates a success
-            # (see https://grodansparadis.gitbooks.io/the-vscp-daemon/canal_interface_specification.html)
+            # https://grodansparadis.gitbooks.io/the-vscp-daemon/canal_interface_specification.html
             # raise an error if the return code is <= 0
             if result <= 0:
                 raise can.CanInitializationError(
