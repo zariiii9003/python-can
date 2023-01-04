@@ -23,7 +23,7 @@ import platform
 import logging
 
 if platform.system() == "Windows":
-    import winreg
+    import winreg  # pylint: disable=import-error
 
 
 logger = logging.getLogger("can.pcan")

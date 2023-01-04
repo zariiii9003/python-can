@@ -61,7 +61,7 @@ from . import xldefine, xlclass
 xldriver: Optional[ModuleType] = None
 try:
     from . import xldriver
-except (TypeError, AttributeError) as _exc:
+except (TypeError, AttributeError, OSError) as _exc:
     LOG.warning("Could not import vxlapi: %s", _exc)
 
 

@@ -72,6 +72,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-lint.txt
+        pip install -e .
     - name: mypy 3.7
       run: |
         mypy --python-version 3.7 .
@@ -89,7 +90,7 @@ jobs:
         mypy --python-version 3.11 .
     - name: pylint
       run: |
-        pylint --rcfile=.pylintrc \
+        pylint -ry --rcfile=.pylintrc \
         setup.py \
         doc/conf.py \
         scripts/**.py \
@@ -100,8 +101,8 @@ jobs:
         can/interfaces/pcan \
         can/interfaces/serial \
         can/interfaces/socketcan \
-        can/interfaces/vector \
-        can/interfaces/usb2can
+        can/interfaces/usb2can \
+        can/interfaces/vector
 
   format:
     runs-on: ubuntu-latest
