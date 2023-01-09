@@ -30,6 +30,11 @@ jobs:
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
+    - name: Setup vcan module
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo bash test/open_vcan.sh
+        echo "TEST_SOCKETCAN=True" >> $GITHUB_ENV
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
