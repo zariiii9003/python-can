@@ -620,6 +620,10 @@ class PcanBus(BusABC):
 
     def shutdown(self):
         super().shutdown()
+
+        if not hasattr(self, "m_objPCANBasic") or not hasattr(self, "m_PcanHandle"):
+            return
+
         if HAS_EVENTS and IS_LINUX:
             self.m_objPCANBasic.SetValue(self.m_PcanHandle, PCAN_RECEIVE_EVENT, 0)
 

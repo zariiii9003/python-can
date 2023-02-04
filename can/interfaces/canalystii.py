@@ -208,6 +208,8 @@ class CANalystIIBus(BusABC):
 
     def shutdown(self) -> None:
         super().shutdown()
-        for channel in self.channels:
-            self.device.stop(channel)
-        self.device = None
+
+        if hasattr(self, "channels") and hasattr(self, "device"):
+            for channel in self.channels:
+                self.device.stop(channel)
+            self.device = None

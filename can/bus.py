@@ -305,6 +305,9 @@ class BusABC(metaclass=ABCMeta):
         :param remove_tasks:
             Stop tracking the stopped tasks.
         """
+        if not hasattr(self, "_periodic_tasks"):
+            return
+
         for task in self._periodic_tasks:
             # we cannot let `task.stop()` modify `self._periodic_tasks` while we are
             # iterating over it (#634)

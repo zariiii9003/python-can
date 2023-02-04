@@ -797,13 +797,18 @@ class IXXATBus(BusABC):
         )
 
     def shutdown(self):
-        if self._scheduler is not None:
+        super().shutdown()
+
+        if hasattr(self, "_scheduler") and self._scheduler is not None:
             _canlib.canSchedulerClose(self._scheduler)
-        _canlib.canChannelClose(self._channel_handle)
-        _canlib.canControlStart(self._control_handle, constants.FALSE)
-        _canlib.canControlReset(self._control_handle)
-        _canlib.canControlClose(self._control_handle)
-        _canlib.vciDeviceClose(self._device_handle)
+        if hasattr(self, "_channel_handle"):
+            _canlib.canChannelClose(self._channel_handle)
+        if hasattr(self, "_control_handle"):
+            _canlib.canControlStart(self._control_handle, constants.FALSE)
+            _canlib.canControlReset(self._control_handle)
+            _canlib.canControlClose(self._control_handle)
+        if hasattr(self, "_device_handle"):
+            _canlib.vciDeviceClose(self._device_handle)
 
     @property
     def state(self) -> BusState:

@@ -148,7 +148,9 @@ class IXXATBus(BusABC):
 
     def shutdown(self) -> None:
         super().shutdown()
-        self.bus.shutdown()
+
+        if hasattr(self, "bus"):
+            self.bus.shutdown()
 
     @property
     def state(self) -> BusState:
