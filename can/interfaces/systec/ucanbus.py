@@ -4,9 +4,8 @@ from threading import Event
 from can import BusABC, BusState, Message
 
 from ...exceptions import CanError, CanInitializationError, CanOperationError
-from .constants import *
+from . import constants, structures
 from .exceptions import UcanException
-from .structures import *
 from .ucan import UcanServer
 
 log = logging.getLogger("can.systec")
@@ -26,7 +25,10 @@ class Ucan(UcanServer):
 
     def read_can_msg(self, channel, count, timeout):
         self._msg_received_event.clear()
-        if self.get_msg_pending(channel, PendingFlags.PENDING_FLAG_RX_DLL) == 0:
+        if (
+            self.get_msg_pending(channel, constants.PendingFlags.PENDING_FLAG_RX_DLL)
+            == 0
+        ):
             if not self._msg_received_event.wait(timeout):
                 return None, False
         return super().read_can_msg(channel, 1)
@@ -38,15 +40,15 @@ class UcanBus(BusABC):
     """
 
     BITRATES = {
-        10000: Baudrate.BAUD_10kBit,
-        20000: Baudrate.BAUD_20kBit,
-        50000: Baudrate.BAUD_50kBit,
-        100000: Baudrate.BAUD_100kBit,
-        125000: Baudrate.BAUD_125kBit,
-        250000: Baudrate.BAUD_250kBit,
-        500000: Baudrate.BAUD_500kBit,
-        800000: Baudrate.BAUD_800kBit,
-        1000000: Baudrate.BAUD_1MBit,
+        10000: constants.Baudrate.BAUD_10kBit,
+        20000: constants.Baudrate.BAUD_20kBit,
+        50000: constants.Baudrate.BAUD_50kBit,
+        100000: constants.Baudrate.BAUD_100kBit,
+        125000: constants.Baudrate.BAUD_125kBit,
+        250000: constants.Baudrate.BAUD_250kBit,
+        500000: constants.Baudrate.BAUD_500kBit,
+        800000: constants.Baudrate.BAUD_800kBit,
+        1000000: constants.Baudrate.BAUD_1MBit,
     }
 
     def __init__(self, channel, can_filters=None, **kwargs):
@@ -104,7 +106,7 @@ class UcanBus(BusABC):
             ) from exception
 
         self.channel = int(channel)
-        device_number = int(kwargs.get("device_number", ANY_MODULE))
+        device_number = int(kwargs.get("device_number", constants.ANY_MODULE))
 
         # configuration options
         bitrate = kwargs.get("bitrate", 500000)
@@ -119,9 +121,9 @@ class UcanBus(BusABC):
 
         # get parameters
         self._params = {
-            "mode": Mode.MODE_NORMAL
-            | (Mode.MODE_TX_ECHO if kwargs.get("receive_own_messages") else 0)
-            | (Mode.MODE_LISTEN_ONLY if state is BusState.PASSIVE else 0),
+            "mode": constants.Mode.MODE_NORMAL
+            | (constants.Mode.MODE_TX_ECHO if kwargs.get("receive_own_messages") else 0)
+            | (constants.Mode.MODE_LISTEN_ONLY if state is BusState.PASSIVE else 0),
             "BTR": self.BITRATES[bitrate],
         }
         # get extra parameters
@@ -158,8 +160,12 @@ class UcanBus(BusABC):
 
         msg = Message(
             timestamp=float(message[0].time) / 1000.0,
-            is_remote_frame=bool(message[0].frame_format & MsgFrameFormat.MSG_FF_RTR),
-            is_extended_id=bool(message[0].frame_format & MsgFrameFormat.MSG_FF_EXT),
+            is_remote_frame=bool(
+                message[0].frame_format & constants.MsgFrameFormat.MSG_FF_RTR
+            ),
+            is_extended_id=bool(
+                message[0].frame_format & constants.MsgFrameFormat.MSG_FF_EXT
+            ),
             arbitration_id=message[0].id,
             dlc=len(message[0].data),
             data=message[0].data,
@@ -188,11 +194,11 @@ class UcanBus(BusABC):
             if timeout is not None and timeout >= 0:
                 self._ucan.set_tx_timeout(self.channel, int(timeout * 1000))
 
-            message = CanMsg(
+            message = structures.CanMsg(
                 msg.arbitration_id,
-                MsgFrameFormat.MSG_FF_STD
-                | (MsgFrameFormat.MSG_FF_EXT if msg.is_extended_id else 0)
-                | (MsgFrameFormat.MSG_FF_RTR if msg.is_remote_frame else 0),
+                constants.MsgFrameFormat.MSG_FF_STD
+                | (constants.MsgFrameFormat.MSG_FF_EXT if msg.is_extended_id else 0)
+                | (constants.MsgFrameFormat.MSG_FF_RTR if msg.is_remote_frame else 0),
                 msg.data,
             )
             self._ucan.write_can_msg(self.channel, [message])
@@ -208,7 +214,7 @@ class UcanBus(BusABC):
                 configs.append(
                     {
                         "interface": "systec",
-                        "channel": Channel.CHANNEL_CH0,
+                        "channel": constants.Channel.CHANNEL_CH0,
                         "device_number": hw_info_ex.device_number,
                     }
                 )
@@ -216,7 +222,7 @@ class UcanBus(BusABC):
                     configs.append(
                         {
                             "interface": "systec",
-                            "channel": Channel.CHANNEL_CH1,
+                            "channel": constants.Channel.CHANNEL_CH1,
                             "device_number": hw_info_ex.device_number,
                         }
                     )
@@ -248,7 +254,7 @@ class UcanBus(BusABC):
         """
         log.info("Flushing transmit buffer")
         try:
-            self._ucan.reset_can(self.channel, ResetFlags.RESET_ONLY_TX_BUFF)
+            self._ucan.reset_can(self.channel, constants.ResetFlags.RESET_ONLY_TX_BUFF)
         except UcanException as exception:
             raise CanOperationError() from exception
 
@@ -300,9 +306,9 @@ class UcanBus(BusABC):
                 self._ucan.shutdown(self.channel, False)
                 # set mode
                 if new_state is BusState.ACTIVE:
-                    self._params["mode"] &= ~Mode.MODE_LISTEN_ONLY
+                    self._params["mode"] &= ~constants.Mode.MODE_LISTEN_ONLY
                 else:
-                    self._params["mode"] |= Mode.MODE_LISTEN_ONLY
+                    self._params["mode"] |= constants.Mode.MODE_LISTEN_ONLY
                 # reinitialize CAN channel
                 self._ucan.init_can(self.channel, **self._params)
             except UcanException as exception:

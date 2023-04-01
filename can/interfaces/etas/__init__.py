@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 import can
 from can.exceptions import CanInitializationError
 
-from .boa import *
+from . import boa
 
 
 class EtasBus(can.BusABC):
@@ -21,33 +21,35 @@ class EtasBus(can.BusABC):
     ):
         self.receive_own_messages = receive_own_messages
 
-        nodeRange = CSI_NodeRange(CSI_NODE_MIN, CSI_NODE_MAX)
-        self.tree = ctypes.POINTER(CSI_Tree)()
-        CSI_CreateProtocolTree(ctypes.c_char_p(b""), nodeRange, ctypes.byref(self.tree))
+        nodeRange = boa.CSI_NodeRange(boa.CSI_NODE_MIN, boa.CSI_NODE_MAX)
+        self.tree = ctypes.POINTER(boa.CSI_Tree)()
+        boa.CSI_CreateProtocolTree(
+            ctypes.c_char_p(b""), nodeRange, ctypes.byref(self.tree)
+        )
 
-        oci_can_v = BOA_Version(1, 4, 0, 0)
+        oci_can_v = boa.BOA_Version(1, 4, 0, 0)
 
-        self.ctrl = OCI_ControllerHandle()
-        OCI_CreateCANControllerNoSearch(
+        self.ctrl = boa.OCI_ControllerHandle()
+        boa.OCI_CreateCANControllerNoSearch(
             channel.encode(),
             ctypes.byref(oci_can_v),
             self.tree,
             ctypes.byref(self.ctrl),
         )
 
-        ctrlConf = OCI_CANConfiguration()
+        ctrlConf = boa.OCI_CANConfiguration()
         ctrlConf.baudrate = bitrate
         ctrlConf.samplePoint = 80
-        ctrlConf.samplesPerBit = OCI_CAN_THREE_SAMPLES_PER_BIT
+        ctrlConf.samplesPerBit = boa.OCI_CAN_THREE_SAMPLES_PER_BIT
         ctrlConf.BTL_Cycles = 10
         ctrlConf.SJW = 1
-        ctrlConf.syncEdge = OCI_CAN_SINGLE_SYNC_EDGE
-        ctrlConf.physicalMedia = OCI_CAN_MEDIA_HIGH_SPEED
+        ctrlConf.syncEdge = boa.OCI_CAN_SINGLE_SYNC_EDGE
+        ctrlConf.physicalMedia = boa.OCI_CAN_MEDIA_HIGH_SPEED
         if receive_own_messages:
-            ctrlConf.selfReceptionMode = OCI_SELF_RECEPTION_ON
+            ctrlConf.selfReceptionMode = boa.OCI_SELF_RECEPTION_ON
         else:
-            ctrlConf.selfReceptionMode = OCI_SELF_RECEPTION_OFF
-        ctrlConf.busParticipationMode = OCI_BUSMODE_ACTIVE
+            ctrlConf.selfReceptionMode = boa.OCI_SELF_RECEPTION_OFF
+        ctrlConf.busParticipationMode = boa.OCI_BUSMODE_ACTIVE
 
         if fd:
             ctrlConf.canFDEnabled = True
@@ -56,18 +58,20 @@ class EtasBus(can.BusABC):
             ctrlConf.canFDConfig.dataSamplePoint = 80
             ctrlConf.canFDConfig.dataSJW = 1
             ctrlConf.canFDConfig.flags = 0
-            ctrlConf.canFDConfig.canFdTxConfig = OCI_CANFDTX_USE_CAN_AND_CANFD_FRAMES
+            ctrlConf.canFDConfig.canFdTxConfig = (
+                boa.OCI_CANFDTX_USE_CAN_AND_CANFD_FRAMES
+            )
             ctrlConf.canFDConfig.canFdRxConfig.canRxMode = (
-                OCI_CAN_RXMODE_CAN_FRAMES_USING_CAN_MESSAGE
+                boa.OCI_CAN_RXMODE_CAN_FRAMES_USING_CAN_MESSAGE
             )
             ctrlConf.canFDConfig.canFdRxConfig.canFdRxMode = (
-                OCI_CANFDRXMODE_CANFD_FRAMES_USING_CANFD_MESSAGE
+                boa.OCI_CANFDRXMODE_CANFD_FRAMES_USING_CANFD_MESSAGE
             )
 
-        ctrlProp = OCI_CANControllerProperties()
-        ctrlProp.mode = OCI_CONTROLLER_MODE_RUNNING
+        ctrlProp = boa.OCI_CANControllerProperties()
+        ctrlProp.mode = boa.OCI_CONTROLLER_MODE_RUNNING
 
-        ec = OCI_OpenCANController(
+        ec = boa.OCI_OpenCANController(
             self.ctrl, ctypes.byref(ctrlConf), ctypes.byref(ctrlProp)
         )
         if ec != 0x0 and ec != 0x40004000:  # accept BOA_WARN_PARAM_ADAPTED
@@ -77,17 +81,21 @@ class EtasBus(can.BusABC):
 
         # RX
 
-        rxQConf = OCI_CANRxQueueConfiguration()
-        rxQConf.onFrame.function = ctypes.cast(None, OCI_CANRxCallbackFunctionSingleMsg)
+        rxQConf = boa.OCI_CANRxQueueConfiguration()
+        rxQConf.onFrame.function = ctypes.cast(
+            None, boa.OCI_CANRxCallbackFunctionSingleMsg
+        )
         rxQConf.onFrame.userData = None
-        rxQConf.onEvent.function = ctypes.cast(None, OCI_CANRxCallbackFunctionSingleMsg)
+        rxQConf.onEvent.function = ctypes.cast(
+            None, boa.OCI_CANRxCallbackFunctionSingleMsg
+        )
         rxQConf.onEvent.userData = None
         if receive_own_messages:
-            rxQConf.selfReceptionMode = OCI_SELF_RECEPTION_ON
+            rxQConf.selfReceptionMode = boa.OCI_SELF_RECEPTION_ON
         else:
-            rxQConf.selfReceptionMode = OCI_SELF_RECEPTION_OFF
-        self.rxQueue = OCI_QueueHandle()
-        OCI_CreateCANRxQueue(
+            rxQConf.selfReceptionMode = boa.OCI_SELF_RECEPTION_OFF
+        self.rxQueue = boa.OCI_QueueHandle()
+        boa.OCI_CreateCANRxQueue(
             self.ctrl, ctypes.byref(rxQConf), ctypes.byref(self.rxQueue)
         )
 
@@ -96,23 +104,23 @@ class EtasBus(can.BusABC):
 
         # TX
 
-        txQConf = OCI_CANTxQueueConfiguration()
+        txQConf = boa.OCI_CANTxQueueConfiguration()
         txQConf.reserved = 0
-        self.txQueue = OCI_QueueHandle()
-        OCI_CreateCANTxQueue(
+        self.txQueue = boa.OCI_QueueHandle()
+        boa.OCI_CreateCANTxQueue(
             self.ctrl, ctypes.byref(txQConf), ctypes.byref(self.txQueue)
         )
 
         # Common
 
-        timerCapabilities = OCI_TimerCapabilities()
-        OCI_GetTimerCapabilities(self.ctrl, ctypes.byref(timerCapabilities))
+        timerCapabilities = boa.OCI_TimerCapabilities()
+        boa.OCI_GetTimerCapabilities(self.ctrl, ctypes.byref(timerCapabilities))
         self.tickFrequency = timerCapabilities.tickFrequency  # clock ticks per second
 
         # all timestamps are hardware timestamps relative to the CAN device powerup
         # calculate an offset to make them relative to epoch
-        now = OCI_Time()
-        OCI_GetTimerValue(self.ctrl, ctypes.byref(now))
+        now = boa.OCI_Time()
+        boa.OCI_GetTimerValue(self.ctrl, ctypes.byref(now))
         self.timeOffset = time.time() - (float(now.value) / self.tickFrequency)
 
         self.channel_info = channel
@@ -120,16 +128,16 @@ class EtasBus(can.BusABC):
     def _recv_internal(
         self, timeout: Optional[float]
     ) -> Tuple[Optional[can.Message], bool]:
-        ociMsgs = (ctypes.POINTER(OCI_CANMessageEx) * 1)()
-        ociMsg = OCI_CANMessageEx()
+        ociMsgs = (ctypes.POINTER(boa.OCI_CANMessageEx) * 1)()
+        ociMsg = boa.OCI_CANMessageEx()
         ociMsgs[0] = ctypes.pointer(ociMsg)
 
         count = ctypes.c_uint32()
         if timeout is not None:  # wait for specified time
-            t = OCI_Time(round(timeout * self.tickFrequency))
+            t = boa.OCI_Time(round(timeout * self.tickFrequency))
         else:  # wait indefinitely
-            t = OCI_NO_TIME
-        OCI_ReadCANDataEx(
+            t = boa.OCI_NO_TIME
+        boa.OCI_ReadCANDataEx(
             self.rxQueue,
             t,
             ociMsgs,
@@ -141,44 +149,44 @@ class EtasBus(can.BusABC):
         msg = None
 
         if count.value != 0:
-            if ociMsg.type == OCI_CANFDRX_MESSAGE.value:
+            if ociMsg.type == boa.OCI_CANFDRX_MESSAGE.value:
                 ociRxMsg = ociMsg.data.canFDRxMessage
                 msg = can.Message(
                     timestamp=float(ociRxMsg.timeStamp) / self.tickFrequency
                     + self.timeOffset,
                     arbitration_id=ociRxMsg.frameID,
-                    is_extended_id=bool(ociRxMsg.flags & OCI_CAN_MSG_FLAG_EXTENDED),
+                    is_extended_id=bool(ociRxMsg.flags & boa.OCI_CAN_MSG_FLAG_EXTENDED),
                     is_remote_frame=bool(
-                        ociRxMsg.flags & OCI_CAN_MSG_FLAG_REMOTE_FRAME
+                        ociRxMsg.flags & boa.OCI_CAN_MSG_FLAG_REMOTE_FRAME
                     ),
                     # is_error_frame=False,
                     # channel=None,
                     dlc=ociRxMsg.size,
                     data=ociRxMsg.data[0 : ociRxMsg.size],
                     is_fd=True,
-                    is_rx=not bool(ociRxMsg.flags & OCI_CAN_MSG_FLAG_SELFRECEPTION),
+                    is_rx=not bool(ociRxMsg.flags & boa.OCI_CAN_MSG_FLAG_SELFRECEPTION),
                     bitrate_switch=bool(
-                        ociRxMsg.flags & OCI_CAN_MSG_FLAG_FD_DATA_BIT_RATE
+                        ociRxMsg.flags & boa.OCI_CAN_MSG_FLAG_FD_DATA_BIT_RATE
                     ),
                     # error_state_indicator=False,
                     # check=False,
                 )
-            elif ociMsg.type == OCI_CAN_RX_MESSAGE.value:
+            elif ociMsg.type == boa.OCI_CAN_RX_MESSAGE.value:
                 ociRxMsg = ociMsg.data.rxMessage
                 msg = can.Message(
                     timestamp=float(ociRxMsg.timeStamp) / self.tickFrequency
                     + self.timeOffset,
                     arbitration_id=ociRxMsg.frameID,
-                    is_extended_id=bool(ociRxMsg.flags & OCI_CAN_MSG_FLAG_EXTENDED),
+                    is_extended_id=bool(ociRxMsg.flags & boa.OCI_CAN_MSG_FLAG_EXTENDED),
                     is_remote_frame=bool(
-                        ociRxMsg.flags & OCI_CAN_MSG_FLAG_REMOTE_FRAME
+                        ociRxMsg.flags & boa.OCI_CAN_MSG_FLAG_REMOTE_FRAME
                     ),
                     # is_error_frame=False,
                     # channel=None,
                     dlc=ociRxMsg.dlc,
                     data=ociRxMsg.data[0 : ociRxMsg.dlc],
                     # is_fd=False,
-                    is_rx=not bool(ociRxMsg.flags & OCI_CAN_MSG_FLAG_SELFRECEPTION),
+                    is_rx=not bool(ociRxMsg.flags & boa.OCI_CAN_MSG_FLAG_SELFRECEPTION),
                     # bitrate_switch=False,
                     # error_state_indicator=False,
                     # check=False,
@@ -187,16 +195,16 @@ class EtasBus(can.BusABC):
         return (msg, True)
 
     def send(self, msg: can.Message, timeout: Optional[float] = None) -> None:
-        ociMsgs = (ctypes.POINTER(OCI_CANMessageEx) * 1)()
-        ociMsg = OCI_CANMessageEx()
+        ociMsgs = (ctypes.POINTER(boa.OCI_CANMessageEx) * 1)()
+        ociMsg = boa.OCI_CANMessageEx()
         ociMsgs[0] = ctypes.pointer(ociMsg)
 
         if msg.is_fd:
-            ociMsg.type = OCI_CANFDTX_MESSAGE
+            ociMsg.type = boa.OCI_CANFDTX_MESSAGE
             ociTxMsg = ociMsg.data.canFDTxMessage
             ociTxMsg.size = msg.dlc
         else:
-            ociMsg.type = OCI_CAN_TX_MESSAGE
+            ociMsg.type = boa.OCI_CAN_TX_MESSAGE
             ociTxMsg = ociMsg.data.txMessage
             ociTxMsg.dlc = msg.dlc
 
@@ -204,30 +212,30 @@ class EtasBus(can.BusABC):
         ociTxMsg.frameID = msg.arbitration_id
         ociTxMsg.flags = 0
         if msg.is_extended_id:
-            ociTxMsg.flags |= OCI_CAN_MSG_FLAG_EXTENDED
+            ociTxMsg.flags |= boa.OCI_CAN_MSG_FLAG_EXTENDED
         if msg.is_remote_frame:
-            ociTxMsg.flags |= OCI_CAN_MSG_FLAG_REMOTE_FRAME
+            ociTxMsg.flags |= boa.OCI_CAN_MSG_FLAG_REMOTE_FRAME
         ociTxMsg.data = tuple(msg.data)
 
         if msg.is_fd:
-            ociTxMsg.flags |= OCI_CAN_MSG_FLAG_FD_DATA
+            ociTxMsg.flags |= boa.OCI_CAN_MSG_FLAG_FD_DATA
             if msg.bitrate_switch:
-                ociTxMsg.flags |= OCI_CAN_MSG_FLAG_FD_DATA_BIT_RATE
+                ociTxMsg.flags |= boa.OCI_CAN_MSG_FLAG_FD_DATA_BIT_RATE
 
-        OCI_WriteCANDataEx(self.txQueue, OCI_NO_TIME, ociMsgs, 1, None)
+        boa.OCI_WriteCANDataEx(self.txQueue, boa.OCI_NO_TIME, ociMsgs, 1, None)
 
     def _apply_filters(self, filters: Optional[can.typechecking.CanFilters]) -> None:
         if self._oci_filters:
-            OCI_RemoveCANFrameFilterEx(self.rxQueue, self._oci_filters, 1)
+            boa.OCI_RemoveCANFrameFilterEx(self.rxQueue, self._oci_filters, 1)
 
         # "accept all" filter
         if filters is None:
             filters = [{"can_id": 0x0, "can_mask": 0x0}]
 
-        self._oci_filters = (ctypes.POINTER(OCI_CANRxFilterEx) * len(filters))()
+        self._oci_filters = (ctypes.POINTER(boa.OCI_CANRxFilterEx) * len(filters))()
 
         for i, filter in enumerate(filters):
-            f = OCI_CANRxFilterEx()
+            f = boa.OCI_CANRxFilterEx()
             f.frameIDValue = filter["can_id"]
             f.frameIDMask = filter["can_mask"]
             f.tag = 0
@@ -237,53 +245,55 @@ class EtasBus(can.BusABC):
                 f.flagsMask = 0
             else:
                 # enable the SR bit in the mask. since the bit is 0 in flagsValue -> do not self-receive
-                f.flagsMask = OCI_CAN_MSG_FLAG_SELFRECEPTION
+                f.flagsMask = boa.OCI_CAN_MSG_FLAG_SELFRECEPTION
             if filter.get("extended"):
-                f.flagsValue |= OCI_CAN_MSG_FLAG_EXTENDED
-                f.flagsMask |= OCI_CAN_MSG_FLAG_EXTENDED
+                f.flagsValue |= boa.OCI_CAN_MSG_FLAG_EXTENDED
+                f.flagsMask |= boa.OCI_CAN_MSG_FLAG_EXTENDED
             self._oci_filters[i].contents = f
 
-        OCI_AddCANFrameFilterEx(self.rxQueue, self._oci_filters, len(self._oci_filters))
+        boa.OCI_AddCANFrameFilterEx(
+            self.rxQueue, self._oci_filters, len(self._oci_filters)
+        )
 
     def flush_tx_buffer(self) -> None:
-        OCI_ResetQueue(self.txQueue)
+        boa.OCI_ResetQueue(self.txQueue)
 
     def shutdown(self) -> None:
         super().shutdown()
         # Cleanup TX
         if self.txQueue:
-            OCI_DestroyCANTxQueue(self.txQueue)
+            boa.OCI_DestroyCANTxQueue(self.txQueue)
             self.txQueue = None
 
         # Cleanup RX
         if self.rxQueue:
-            OCI_DestroyCANRxQueue(self.rxQueue)
+            boa.OCI_DestroyCANRxQueue(self.rxQueue)
             self.rxQueue = None
 
         # Cleanup common
         if self.ctrl:
-            OCI_CloseCANController(self.ctrl)
-            OCI_DestroyCANController(self.ctrl)
+            boa.OCI_CloseCANController(self.ctrl)
+            boa.OCI_DestroyCANController(self.ctrl)
             self.ctrl = None
 
         if self.tree:
-            CSI_DestroyProtocolTree(self.tree)
+            boa.CSI_DestroyProtocolTree(self.tree)
             self.tree = None
 
     @property
     def state(self) -> can.BusState:
-        status = OCI_CANControllerStatus()
-        OCI_GetCANControllerStatus(self.ctrl, ctypes.byref(status))
-        if status.stateCode & OCI_CAN_STATE_ACTIVE:
+        status = boa.OCI_CANControllerStatus()
+        boa.OCI_GetCANControllerStatus(self.ctrl, ctypes.byref(status))
+        if status.stateCode & boa.OCI_CAN_STATE_ACTIVE:
             return can.BusState.ACTIVE
-        elif status.stateCode & OCI_CAN_STATE_PASSIVE:
+        elif status.stateCode & boa.OCI_CAN_STATE_PASSIVE:
             return can.BusState.PASSIVE
 
     @state.setter
     def state(self, new_state: can.BusState) -> None:
         # disabled, OCI_AdaptCANConfiguration does not allow changing the bus mode
         # if new_state == can.BusState.ACTIVE:
-        #     self.ctrlConf.busParticipationMode = OCI_BUSMODE_ACTIVE
+        #     self.ctrlConf.busParticipationMode = boa.OCI_BUSMODE_ACTIVE
         # else:
         #     self.ctrlConf.busParticipationMode = OCI_BUSMODE_PASSIVE
         # ec = OCI_AdaptCANConfiguration(self.ctrl, ctypes.byref(self.ctrlConf))
@@ -293,11 +303,11 @@ class EtasBus(can.BusABC):
 
     @staticmethod
     def _detect_available_configs() -> List[can.typechecking.AutoDetectedConfig]:
-        nodeRange = CSI_NodeRange(CSI_NODE_MIN, CSI_NODE_MAX)
-        tree = ctypes.POINTER(CSI_Tree)()
-        CSI_CreateProtocolTree(ctypes.c_char_p(b""), nodeRange, ctypes.byref(tree))
+        nodeRange = boa.CSI_NodeRange(boa.CSI_NODE_MIN, boa.CSI_NODE_MAX)
+        tree = ctypes.POINTER(boa.CSI_Tree)()
+        boa.CSI_CreateProtocolTree(ctypes.c_char_p(b""), nodeRange, ctypes.byref(tree))
 
-        nodes: Dict[str, str] = []
+        nodes: List[Dict[str, str]] = []
 
         def _findNodes(tree, prefix):
             uri = f"{prefix}/{tree.contents.item.uriName.decode()}"
@@ -314,6 +324,6 @@ class EtasBus(can.BusABC):
 
         _findNodes(tree, "ETAS:/")
 
-        CSI_DestroyProtocolTree(tree)
+        boa.CSI_DestroyProtocolTree(tree)
 
         return nodes

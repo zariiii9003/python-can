@@ -5,7 +5,8 @@ from unittest.mock import Mock, patch
 
 import can
 from can.interfaces.systec import ucan, ucanbus
-from can.interfaces.systec.ucan import *
+from can.interfaces.systec.structures import *
+from can.interfaces.systec.constants import *
 
 
 class SystecTest(unittest.TestCase):

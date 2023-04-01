@@ -33,6 +33,7 @@ __all__ = [
     "CSVWriter",
     "CyclicSendTaskABC",
     "detect_available_configs",
+    "exceptions",
     "interface",
     "LimitedDurationCyclicSendTaskABC",
     "Listener",
@@ -64,6 +65,7 @@ rc: Dict[str, Any] = {}
 
 from . import typechecking  # isort:skip
 from . import util  # isort:skip
+from . import exceptions  # isort:skip
 from . import broadcastmanager, interface
 from .bit_timing import BitTiming, BitTimingFd
 from .broadcastmanager import (

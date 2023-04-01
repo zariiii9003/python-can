@@ -17,7 +17,22 @@
 # Module Imports
 import logging
 import platform
-from ctypes import *
+from ctypes import (
+    Structure,
+    byref,
+    c_char,
+    c_char_p,
+    c_int,
+    c_int64,
+    c_ubyte,
+    c_uint,
+    c_ulonglong,
+    c_ushort,
+    cdll,
+    create_string_buffer,
+    sizeof,
+    windll,
+)
 from ctypes.util import find_library
 
 PLATFORM = platform.system()

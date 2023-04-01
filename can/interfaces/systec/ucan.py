@@ -1,12 +1,12 @@
 import logging
+import os
 import sys
 from ctypes import byref
 from ctypes import c_wchar_p as LPWSTR
 
-from ...exceptions import CanInterfaceNotImplementedError
-from .constants import *
-from .exceptions import *
-from .structures import *
+from can.exceptions import CanInterfaceNotImplementedError
+
+from . import constants, exceptions, structures
 
 log = logging.getLogger("can.systec")
 
@@ -19,8 +19,8 @@ def check_valid_rx_can_msg(result):
     :return: True if a valid CAN messages was received, otherwise False.
     :rtype: bool
     """
-    return (result.value == ReturnCode.SUCCESSFUL) or (
-        result.value > ReturnCode.WARNING
+    return (result.value == exceptions.ReturnCode.SUCCESSFUL) or (
+        result.value > exceptions.ReturnCode.WARNING
     )
 
 
@@ -35,10 +35,10 @@ def check_tx_ok(result):
     :return: True if CAN message(s) was(were) written successfully, otherwise False.
     :rtype: bool
 
-    .. :seealso: :const:`ReturnCode.WARN_TXLIMIT`
+    .. :seealso: :const:`exceptions.ReturnCode.WARN_TXLIMIT`
     """
-    return (result.value == ReturnCode.SUCCESSFUL) or (
-        result.value > ReturnCode.WARNING
+    return (result.value == exceptions.ReturnCode.SUCCESSFUL) or (
+        result.value > exceptions.ReturnCode.WARNING
     )
 
 
@@ -50,7 +50,7 @@ def check_tx_success(result):
     :return: True if CAN message(s) was(were) written successfully, otherwise False.
     :rtype: bool
     """
-    return result.value == ReturnCode.SUCCESSFUL
+    return result.value == exceptions.ReturnCode.SUCCESSFUL
 
 
 def check_tx_not_all(result):
@@ -61,7 +61,7 @@ def check_tx_not_all(result):
     :return: True if not all CAN messages were written, otherwise False.
     :rtype: bool
     """
-    return result.value == ReturnCode.WARN_TXLIMIT
+    return result.value == exceptions.ReturnCode.WARN_TXLIMIT
 
 
 def check_warning(result):
@@ -72,7 +72,7 @@ def check_warning(result):
     :return: True if a function returned warning, otherwise False.
     :rtype: bool
     """
-    return result.value >= ReturnCode.WARNING
+    return result.value >= exceptions.ReturnCode.WARNING
 
 
 def check_error(result):
@@ -83,8 +83,8 @@ def check_error(result):
     :return: True if a function returned error, otherwise False.
     :rtype: bool
     """
-    return (result.value != ReturnCode.SUCCESSFUL) and (
-        result.value < ReturnCode.WARNING
+    return (result.value != exceptions.ReturnCode.SUCCESSFUL) and (
+        result.value < exceptions.ReturnCode.WARNING
     )
 
 
@@ -96,17 +96,19 @@ def check_error_cmd(result):
     :return: True if a function returned error from firmware, otherwise False.
     :rtype: bool
     """
-    return (result.value >= ReturnCode.ERRCMD) and (result.value < ReturnCode.WARNING)
+    return (result.value >= exceptions.ReturnCode.ERRCMD) and (
+        result.value < exceptions.ReturnCode.WARNING
+    )
 
 
 def check_result(result, func, arguments):
-    if check_warning(result) and (result.value != ReturnCode.WARN_NODATA):
-        log.warning(UcanWarning(result, func, arguments))
+    if check_warning(result) and (result.value != exceptions.ReturnCode.WARN_NODATA):
+        log.warning(exceptions.UcanWarning(result, func, arguments))
     elif check_error(result):
         if check_error_cmd(result):
-            raise UcanCmdError(result, func, arguments)
+            raise exceptions.UcanCmdError(result, func, arguments)
         else:
-            raise UcanError(result, func, arguments)
+            raise exceptions.UcanError(result, func, arguments)
     return result
 
 
@@ -122,28 +124,31 @@ else:
 
         # BOOL PUBLIC UcanSetDebugMode (DWORD dwDbgLevel_p, _TCHAR* pszFilePathName_p, DWORD dwFlags_p);
         UcanSetDebugMode = lib.UcanSetDebugMode
-        UcanSetDebugMode.restype = BOOL
-        UcanSetDebugMode.argtypes = [DWORD, LPWSTR, DWORD]
+        UcanSetDebugMode.restype = structures.BOOL
+        UcanSetDebugMode.argtypes = [structures.DWORD, LPWSTR, structures.DWORD]
 
         # DWORD PUBLIC UcanGetVersionEx (VersionType VerType_p);
         UcanGetVersionEx = lib.UcanGetVersionEx
-        UcanGetVersionEx.restype = DWORD
-        UcanGetVersionEx.argtypes = [VersionType]
+        UcanGetVersionEx.restype = structures.DWORD
+        UcanGetVersionEx.argtypes = [constants.VersionType]
 
         # DWORD PUBLIC UcanGetFwVersion (Handle UcanHandle_p);
         UcanGetFwVersion = lib.UcanGetFwVersion
-        UcanGetFwVersion.restype = DWORD
-        UcanGetFwVersion.argtypes = [Handle]
+        UcanGetFwVersion.restype = structures.DWORD
+        UcanGetFwVersion.argtypes = [structures.Handle]
 
         # BYTE PUBLIC UcanInitHwConnectControlEx (ConnectControlFktEx fpConnectControlFktEx_p, void* pCallbackArg_p);
         UcanInitHwConnectControlEx = lib.UcanInitHwConnectControlEx
-        UcanInitHwConnectControlEx.restype = ReturnCode
-        UcanInitHwConnectControlEx.argtypes = [ConnectControlFktEx, LPVOID]
+        UcanInitHwConnectControlEx.restype = exceptions.ReturnCode
+        UcanInitHwConnectControlEx.argtypes = [
+            structures.ConnectControlFktEx,
+            structures.LPVOID,
+        ]
         UcanInitHwConnectControlEx.errcheck = check_result
 
         # BYTE PUBLIC UcanDeinitHwConnectControl (void)
         UcanDeinitHwConnectControl = lib.UcanDeinitHwConnectControl
-        UcanDeinitHwConnectControl.restype = ReturnCode
+        UcanDeinitHwConnectControl.restype = exceptions.ReturnCode
         UcanDeinitHwConnectControl.argtypes = []
         UcanDeinitHwConnectControl.errcheck = check_result
 
@@ -153,162 +158,231 @@ else:
         #    DWORD dwSerialNrLow_p,    DWORD dwSerialNrHigh_p,
         #    DWORD dwProductCodeLow_p, DWORD dwProductCodeHigh_p);
         UcanEnumerateHardware = lib.UcanEnumerateHardware
-        UcanEnumerateHardware.restype = DWORD
+        UcanEnumerateHardware.restype = structures.DWORD
         UcanEnumerateHardware.argtypes = [
-            EnumCallback,
-            LPVOID,
-            BOOL,
-            BYTE,
-            BYTE,
-            DWORD,
-            DWORD,
-            DWORD,
-            DWORD,
+            structures.EnumCallback,
+            structures.LPVOID,
+            structures.BOOL,
+            structures.BYTE,
+            structures.BYTE,
+            structures.DWORD,
+            structures.DWORD,
+            structures.DWORD,
+            structures.DWORD,
         ]
 
         # BYTE PUBLIC UcanInitHardwareEx (Handle* pUcanHandle_p, BYTE bDeviceNr_p,
         #   CallbackFktEx fpCallbackFktEx_p, void* pCallbackArg_p);
         UcanInitHardwareEx = lib.UcanInitHardwareEx
-        UcanInitHardwareEx.restype = ReturnCode
-        UcanInitHardwareEx.argtypes = [POINTER(Handle), BYTE, CallbackFktEx, LPVOID]
+        UcanInitHardwareEx.restype = exceptions.ReturnCode
+        UcanInitHardwareEx.argtypes = [
+            structures.POINTER(structures.Handle),
+            structures.BYTE,
+            structures.CallbackFktEx,
+            structures.LPVOID,
+        ]
         UcanInitHardwareEx.errcheck = check_result
 
         # BYTE PUBLIC UcanInitHardwareEx2 (Handle* pUcanHandle_p, DWORD dwSerialNr_p,
         #   CallbackFktEx fpCallbackFktEx_p, void* pCallbackArg_p);
         UcanInitHardwareEx2 = lib.UcanInitHardwareEx2
-        UcanInitHardwareEx2.restype = ReturnCode
-        UcanInitHardwareEx2.argtypes = [POINTER(Handle), DWORD, CallbackFktEx, LPVOID]
+        UcanInitHardwareEx2.restype = exceptions.ReturnCode
+        UcanInitHardwareEx2.argtypes = [
+            structures.POINTER(structures.Handle),
+            structures.DWORD,
+            structures.CallbackFktEx,
+            structures.LPVOID,
+        ]
         UcanInitHardwareEx2.errcheck = check_result
 
         # BYTE PUBLIC UcanGetModuleTime (Handle UcanHandle_p, DWORD* pdwTime_p);
         UcanGetModuleTime = lib.UcanGetModuleTime
-        UcanGetModuleTime.restype = ReturnCode
-        UcanGetModuleTime.argtypes = [Handle, POINTER(DWORD)]
+        UcanGetModuleTime.restype = exceptions.ReturnCode
+        UcanGetModuleTime.argtypes = [
+            structures.Handle,
+            structures.POINTER(structures.DWORD),
+        ]
         UcanGetModuleTime.errcheck = check_result
 
         # BYTE PUBLIC UcanGetHardwareInfoEx2 (Handle UcanHandle_p,
         #   HardwareInfoEx* pHwInfo_p,
         #   ChannelInfo* pCanInfoCh0_p, ChannelInfo* pCanInfoCh1_p);
         UcanGetHardwareInfoEx2 = lib.UcanGetHardwareInfoEx2
-        UcanGetHardwareInfoEx2.restype = ReturnCode
+        UcanGetHardwareInfoEx2.restype = exceptions.ReturnCode
         UcanGetHardwareInfoEx2.argtypes = [
-            Handle,
-            POINTER(HardwareInfoEx),
-            POINTER(ChannelInfo),
-            POINTER(ChannelInfo),
+            structures.Handle,
+            structures.POINTER(structures.HardwareInfoEx),
+            structures.POINTER(structures.ChannelInfo),
+            structures.POINTER(structures.ChannelInfo),
         ]
         UcanGetHardwareInfoEx2.errcheck = check_result
 
         # BYTE PUBLIC UcanInitCanEx2 (Handle UcanHandle_p, BYTE bChannel_p, tUcaninit_canParam* pinit_canParam_p);
         UcanInitCanEx2 = lib.UcanInitCanEx2
-        UcanInitCanEx2.restype = ReturnCode
-        UcanInitCanEx2.argtypes = [Handle, BYTE, POINTER(InitCanParam)]
+        UcanInitCanEx2.restype = exceptions.ReturnCode
+        UcanInitCanEx2.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.POINTER(structures.InitCanParam),
+        ]
         UcanInitCanEx2.errcheck = check_result
 
         # BYTE PUBLIC UcanSetBaudrateEx (Handle UcanHandle_p,
         #   BYTE bChannel_p, BYTE bBTR0_p, BYTE bBTR1_p, DWORD dwBaudrate_p);
         UcanSetBaudrateEx = lib.UcanSetBaudrateEx
-        UcanSetBaudrateEx.restype = ReturnCode
-        UcanSetBaudrateEx.argtypes = [Handle, BYTE, BYTE, BYTE, DWORD]
+        UcanSetBaudrateEx.restype = exceptions.ReturnCode
+        UcanSetBaudrateEx.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.BYTE,
+            structures.BYTE,
+            structures.DWORD,
+        ]
         UcanSetBaudrateEx.errcheck = check_result
 
         # BYTE PUBLIC UcanSetAcceptanceEx (Handle UcanHandle_p, BYTE bChannel_p,
         #   DWORD dwAMR_p, DWORD dwACR_p);
         UcanSetAcceptanceEx = lib.UcanSetAcceptanceEx
-        UcanSetAcceptanceEx.restype = ReturnCode
-        UcanSetAcceptanceEx.argtypes = [Handle, BYTE, DWORD, DWORD]
+        UcanSetAcceptanceEx.restype = exceptions.ReturnCode
+        UcanSetAcceptanceEx.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.DWORD,
+            structures.DWORD,
+        ]
         UcanSetAcceptanceEx.errcheck = check_result
 
         # BYTE PUBLIC UcanResetCanEx (Handle UcanHandle_p, BYTE bChannel_p, DWORD dwResetFlags_p);
         UcanResetCanEx = lib.UcanResetCanEx
-        UcanResetCanEx.restype = ReturnCode
-        UcanResetCanEx.argtypes = [Handle, BYTE, DWORD]
+        UcanResetCanEx.restype = exceptions.ReturnCode
+        UcanResetCanEx.argtypes = [structures.Handle, structures.BYTE, structures.DWORD]
         UcanResetCanEx.errcheck = check_result
 
         # BYTE PUBLIC UcanReadCanMsgEx (Handle UcanHandle_p, BYTE* pbChannel_p,
         #   CanMsg* pCanMsg_p, DWORD* pdwCount_p);
         UcanReadCanMsgEx = lib.UcanReadCanMsgEx
-        UcanReadCanMsgEx.restype = ReturnCode
+        UcanReadCanMsgEx.restype = exceptions.ReturnCode
         UcanReadCanMsgEx.argtypes = [
-            Handle,
-            POINTER(BYTE),
-            POINTER(CanMsg),
-            POINTER(DWORD),
+            structures.Handle,
+            structures.POINTER(structures.BYTE),
+            structures.POINTER(structures.CanMsg),
+            structures.POINTER(structures.DWORD),
         ]
         UcanReadCanMsgEx.errcheck = check_result
 
         # BYTE PUBLIC UcanWriteCanMsgEx (Handle UcanHandle_p, BYTE bChannel_p,
         #   CanMsg* pCanMsg_p, DWORD* pdwCount_p);
         UcanWriteCanMsgEx = lib.UcanWriteCanMsgEx
-        UcanWriteCanMsgEx.restype = ReturnCode
-        UcanWriteCanMsgEx.argtypes = [Handle, BYTE, POINTER(CanMsg), POINTER(DWORD)]
+        UcanWriteCanMsgEx.restype = exceptions.ReturnCode
+        UcanWriteCanMsgEx.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.POINTER(structures.CanMsg),
+            structures.POINTER(structures.DWORD),
+        ]
         UcanWriteCanMsgEx.errcheck = check_result
 
         # BYTE PUBLIC UcanGetStatusEx (Handle UcanHandle_p, BYTE bChannel_p, Status* pStatus_p);
         UcanGetStatusEx = lib.UcanGetStatusEx
-        UcanGetStatusEx.restype = ReturnCode
-        UcanGetStatusEx.argtypes = [Handle, BYTE, POINTER(Status)]
+        UcanGetStatusEx.restype = exceptions.ReturnCode
+        UcanGetStatusEx.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.POINTER(structures.Status),
+        ]
         UcanGetStatusEx.errcheck = check_result
 
         # BYTE PUBLIC UcanGetMsgCountInfoEx (Handle UcanHandle_p, BYTE bChannel_p,
         #   MsgCountInfo* pMsgCountInfo_p);
         UcanGetMsgCountInfoEx = lib.UcanGetMsgCountInfoEx
-        UcanGetMsgCountInfoEx.restype = ReturnCode
-        UcanGetMsgCountInfoEx.argtypes = [Handle, BYTE, POINTER(MsgCountInfo)]
+        UcanGetMsgCountInfoEx.restype = exceptions.ReturnCode
+        UcanGetMsgCountInfoEx.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.POINTER(structures.MsgCountInfo),
+        ]
         UcanGetMsgCountInfoEx.errcheck = check_result
 
         # BYTE PUBLIC UcanGetMsgPending (Handle UcanHandle_p,
         #   BYTE bChannel_p, DWORD dwFlags_p, DWORD* pdwPendingCount_p);
         UcanGetMsgPending = lib.UcanGetMsgPending
-        UcanGetMsgPending.restype = ReturnCode
-        UcanGetMsgPending.argtypes = [Handle, BYTE, DWORD, POINTER(DWORD)]
+        UcanGetMsgPending.restype = exceptions.ReturnCode
+        UcanGetMsgPending.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.DWORD,
+            structures.POINTER(structures.DWORD),
+        ]
         UcanGetMsgPending.errcheck = check_result
 
         # BYTE PUBLIC UcanGetCanErrorCounter (Handle UcanHandle_p,
         #   BYTE bChannel_p, DWORD* pdwTxErrorCounter_p, DWORD* pdwRxErrorCounter_p);
         UcanGetCanErrorCounter = lib.UcanGetCanErrorCounter
-        UcanGetCanErrorCounter.restype = ReturnCode
-        UcanGetCanErrorCounter.argtypes = [Handle, BYTE, POINTER(DWORD), POINTER(DWORD)]
+        UcanGetCanErrorCounter.restype = exceptions.ReturnCode
+        UcanGetCanErrorCounter.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.POINTER(structures.DWORD),
+            structures.POINTER(structures.DWORD),
+        ]
         UcanGetCanErrorCounter.errcheck = check_result
 
         # BYTE PUBLIC UcanSetTxTimeout (Handle UcanHandle_p,
         #   BYTE bChannel_p, DWORD dwTxTimeout_p);
         UcanSetTxTimeout = lib.UcanSetTxTimeout
-        UcanSetTxTimeout.restype = ReturnCode
-        UcanSetTxTimeout.argtypes = [Handle, BYTE, DWORD]
+        UcanSetTxTimeout.restype = exceptions.ReturnCode
+        UcanSetTxTimeout.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.DWORD,
+        ]
         UcanSetTxTimeout.errcheck = check_result
 
         # BYTE PUBLIC UcanDeinitCanEx (Handle UcanHandle_p, BYTE bChannel_p);
         UcanDeinitCanEx = lib.UcanDeinitCanEx
-        UcanDeinitCanEx.restype = ReturnCode
-        UcanDeinitCanEx.argtypes = [Handle, BYTE]
+        UcanDeinitCanEx.restype = exceptions.ReturnCode
+        UcanDeinitCanEx.argtypes = [structures.Handle, structures.BYTE]
         UcanDeinitCanEx.errcheck = check_result
 
         # BYTE PUBLIC UcanDeinitHardware (Handle UcanHandle_p);
         UcanDeinitHardware = lib.UcanDeinitHardware
-        UcanDeinitHardware.restype = ReturnCode
-        UcanDeinitHardware.argtypes = [Handle]
+        UcanDeinitHardware.restype = exceptions.ReturnCode
+        UcanDeinitHardware.argtypes = [structures.Handle]
         UcanDeinitHardware.errcheck = check_result
 
         # BYTE PUBLIC UcanDefineCyclicCanMsg (Handle UcanHandle_p,
         #   BYTE bChannel_p, CanMsg* pCanMsgList_p, DWORD dwCount_p);
         UcanDefineCyclicCanMsg = lib.UcanDefineCyclicCanMsg
-        UcanDefineCyclicCanMsg.restype = ReturnCode
-        UcanDefineCyclicCanMsg.argtypes = [Handle, BYTE, POINTER(CanMsg), DWORD]
+        UcanDefineCyclicCanMsg.restype = exceptions.ReturnCode
+        UcanDefineCyclicCanMsg.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.POINTER(structures.CanMsg),
+            structures.DWORD,
+        ]
         UcanDefineCyclicCanMsg.errcheck = check_result
 
         # BYTE PUBLIC UcanReadCyclicCanMsg (Handle UcanHandle_p,
         #   BYTE bChannel_p, CanMsg* pCanMsgList_p, DWORD* pdwCount_p);
         UcanReadCyclicCanMsg = lib.UcanReadCyclicCanMsg
-        UcanReadCyclicCanMsg.restype = ReturnCode
-        UcanReadCyclicCanMsg.argtypes = [Handle, BYTE, POINTER(CanMsg), POINTER(DWORD)]
+        UcanReadCyclicCanMsg.restype = exceptions.ReturnCode
+        UcanReadCyclicCanMsg.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.POINTER(structures.CanMsg),
+            structures.POINTER(structures.DWORD),
+        ]
         UcanReadCyclicCanMsg.errcheck = check_result
 
         # BYTE PUBLIC UcanEnableCyclicCanMsg (Handle UcanHandle_p,
         #   BYTE bChannel_p, DWORD dwFlags_p);
         UcanEnableCyclicCanMsg = lib.UcanEnableCyclicCanMsg
-        UcanEnableCyclicCanMsg.restype = ReturnCode
-        UcanEnableCyclicCanMsg.argtypes = [Handle, BYTE, DWORD]
+        UcanEnableCyclicCanMsg.restype = exceptions.ReturnCode
+        UcanEnableCyclicCanMsg.argtypes = [
+            structures.Handle,
+            structures.BYTE,
+            structures.DWORD,
+        ]
         UcanEnableCyclicCanMsg.errcheck = check_result
 
         _UCAN_INITIALIZED = True
@@ -331,16 +405,18 @@ class UcanServer:
                 "The interface could not be loaded on the current platform"
             )
 
-        self._handle = Handle(INVALID_HANDLE)
+        self._handle = structures.Handle(constants.INVALID_HANDLE)
         self._is_initialized = False
         self._hw_is_initialized = False
         self._ch_is_initialized = {
-            Channel.CHANNEL_CH0: False,
-            Channel.CHANNEL_CH1: False,
+            constants.Channel.CHANNEL_CH0: False,
+            constants.Channel.CHANNEL_CH1: False,
         }
-        self._callback_ref = CallbackFktEx(self._callback)
+        self._callback_ref = structures.CallbackFktEx(self._callback)
         if self._connect_control_ref is None:
-            self._connect_control_ref = ConnectControlFktEx(self._connect_control)
+            self._connect_control_ref = structures.ConnectControlFktEx(
+                self._connect_control
+            )
             UcanInitHwConnectControlEx(self._connect_control_ref, None)
 
     @property
@@ -361,7 +437,7 @@ class UcanServer:
         :return: True if initialized, otherwise False.
         :rtype: bool
         """
-        return self._ch_is_initialized[Channel.CHANNEL_CH0]
+        return self._ch_is_initialized[constants.Channel.CHANNEL_CH0]
 
     @property
     def is_can1_initialized(self):
@@ -371,12 +447,12 @@ class UcanServer:
         :return: True if initialized, otherwise False.
         :rtype: bool
         """
-        return self._ch_is_initialized[Channel.CHANNEL_CH1]
+        return self._ch_is_initialized[constants.Channel.CHANNEL_CH1]
 
     @classmethod
     def _enum_callback(cls, index, is_used, hw_info_ex, init_info, arg):
         cls._modules_found.append(
-            (index, bool(is_used), hw_info_ex.contents, init_info.contents)
+            (index, structures.BOOL(is_used), hw_info_ex.contents, init_info.contents)
         )
 
     @classmethod
@@ -404,7 +480,7 @@ class UcanServer:
         )
         return cls._modules_found
 
-    def init_hardware(self, serial=None, device_number=ANY_MODULE):
+    def init_hardware(self, serial=None, device_number=constants.ANY_MODULE):
         """
         Initializes the device with the corresponding serial or device number.
 
@@ -425,15 +501,15 @@ class UcanServer:
 
     def init_can(
         self,
-        channel=Channel.CHANNEL_CH0,
-        BTR=Baudrate.BAUD_1MBit,
-        baudrate=BaudrateEx.BAUDEX_USE_BTR01,
-        AMR=AMR_ALL,
-        ACR=ACR_ALL,
-        mode=Mode.MODE_NORMAL,
-        OCR=OutputControl.OCR_DEFAULT,
-        rx_buffer_entries=DEFAULT_BUFFER_ENTRIES,
-        tx_buffer_entries=DEFAULT_BUFFER_ENTRIES,
+        channel=constants.Channel.CHANNEL_CH0,
+        BTR=constants.Baudrate.BAUD_1MBit,
+        baudrate=constants.BaudrateEx.BAUDEX_USE_BTR01,
+        AMR=constants.AMR_ALL,
+        ACR=constants.ACR_ALL,
+        mode=constants.Mode.MODE_NORMAL,
+        OCR=constants.OutputControl.OCR_DEFAULT,
+        rx_buffer_entries=constants.DEFAULT_BUFFER_ENTRIES,
+        tx_buffer_entries=constants.DEFAULT_BUFFER_ENTRIES,
     ):
         """
         Initializes a specific CAN channel of a device.
@@ -450,7 +526,7 @@ class UcanServer:
         :param int tx_buffer_entries: The number of maximum entries in the transmit buffer.
         """
         if not self._ch_is_initialized.get(channel, False):
-            init_param = InitCanParam(
+            init_param = structures.InitCanParam(
                 mode, BTR, OCR, AMR, ACR, baudrate, rx_buffer_entries, tx_buffer_entries
             )
             UcanInitCanEx2(self._handle, channel, init_param)
@@ -467,9 +543,9 @@ class UcanServer:
         :return: Tuple with list of CAN message/s received and the CAN channel where the read CAN messages came from.
         :rtype: tuple(list(CanMsg), int)
         """
-        c_channel = BYTE(channel)
-        c_can_msg = (CanMsg * count)()
-        c_count = DWORD(count)
+        c_channel = structures.BYTE(channel)
+        c_can_msg = (structures.CanMsg * count)()
+        c_count = structures.DWORD(count)
         UcanReadCanMsgEx(self._handle, byref(c_channel), c_can_msg, byref(c_count))
         return c_can_msg[: c_count.value], c_channel.value
 
@@ -483,8 +559,8 @@ class UcanServer:
         :return: The number of successfully transmitted CAN messages.
         :rtype: int
         """
-        c_can_msg = (CanMsg * len(can_msg))(*can_msg)
-        c_count = DWORD(len(can_msg))
+        c_can_msg = (structures.CanMsg * len(can_msg))(*can_msg)
+        c_count = structures.DWORD(len(can_msg))
         UcanWriteCanMsgEx(self._handle, channel, c_can_msg, c_count)
         return c_count
 
@@ -500,7 +576,12 @@ class UcanServer:
         """
         UcanSetBaudrateEx(self._handle, channel, BTR >> 8, BTR, baudarate)
 
-    def set_acceptance(self, channel=Channel.CHANNEL_CH0, AMR=AMR_ALL, ACR=ACR_ALL):
+    def set_acceptance(
+        self,
+        channel=constants.Channel.CHANNEL_CH0,
+        AMR=constants.AMR_ALL,
+        ACR=constants.ACR_ALL,
+    ):
         """
         This function is used to change the acceptance filter values for a specific CAN channel on a device.
 
@@ -511,7 +592,7 @@ class UcanServer:
         """
         UcanSetAcceptanceEx(self._handle, channel, AMR, ACR)
 
-    def get_status(self, channel=Channel.CHANNEL_CH0):
+    def get_status(self, channel=constants.Channel.CHANNEL_CH0):
         """
         Returns the error status of a specific CAN channel.
 
@@ -519,11 +600,11 @@ class UcanServer:
         :return: Tuple with CAN and USB status (see structure :class:`Status`).
         :rtype: tuple(int, int)
         """
-        status = Status()
+        status = structures.Status()
         UcanGetStatusEx(self._handle, channel, byref(status))
         return status.can_status, status.usb_status
 
-    def get_msg_count_info(self, channel=Channel.CHANNEL_CH0):
+    def get_msg_count_info(self, channel=constants.Channel.CHANNEL_CH0):
         """
         Reads the message counters of the specified CAN channel.
 
@@ -532,11 +613,15 @@ class UcanServer:
         :return: Tuple with number of CAN messages sent and received.
         :rtype: tuple(int, int)
         """
-        msg_count_info = MsgCountInfo()
+        msg_count_info = structures.MsgCountInfo()
         UcanGetMsgCountInfoEx(self._handle, channel, byref(msg_count_info))
         return msg_count_info.sent_msg_count, msg_count_info.recv_msg_count
 
-    def reset_can(self, channel=Channel.CHANNEL_CH0, flags=ResetFlags.RESET_ALL):
+    def reset_can(
+        self,
+        channel=constants.Channel.CHANNEL_CH0,
+        flags=constants.ResetFlags.RESET_ALL,
+    ):
         """
         Resets a CAN channel of a device (hardware reset, empty buffer, and so on).
 
@@ -555,8 +640,8 @@ class UcanServer:
             structures with information of CAN channel 0 and 1 (see structure :class:`ChannelInfo`).
         :rtype: tuple(HardwareInfoEx, ChannelInfo, ChannelInfo)
         """
-        hw_info_ex = HardwareInfoEx()
-        can_info_ch0, can_info_ch1 = ChannelInfo(), ChannelInfo()
+        hw_info_ex = structures.HardwareInfoEx()
+        can_info_ch0, can_info_ch1 = structures.ChannelInfo(), structures.ChannelInfo()
         UcanGetHardwareInfoEx2(
             self._handle, byref(hw_info_ex), byref(can_info_ch0), byref(can_info_ch1)
         )
@@ -580,10 +665,10 @@ class UcanServer:
             List of CAN messages (up to 16, see structure :class:`CanMsg`), or None to delete an older list.
         """
         if can_msg is not None:
-            c_can_msg = (CanMsg * len(can_msg))(*can_msg)
-            c_count = DWORD(len(can_msg))
+            c_can_msg = (structures.CanMsg * len(can_msg))(*can_msg)
+            c_count = structures.DWORD(len(can_msg))
         else:
-            c_can_msg = CanMsg()
+            c_can_msg = structures.CanMsg()
             c_count = 0
         UcanDefineCyclicCanMsg(self._handle, channel, c_can_msg, c_count)
 
@@ -596,9 +681,9 @@ class UcanServer:
         :return: List of received CAN messages (up to 16, see structure :class:`CanMsg`).
         :rtype: list(CanMsg)
         """
-        c_channel = BYTE(channel)
-        c_can_msg = (CanMsg * count)()
-        c_count = DWORD(count)
+        c_channel = structures.BYTE(channel)
+        c_can_msg = (structures.CanMsg * count)()
+        c_count = structures.DWORD(count)
         UcanReadCyclicCanMsg(self._handle, byref(c_channel), c_can_msg, c_count)
         return c_can_msg[: c_count.value]
 
@@ -620,7 +705,7 @@ class UcanServer:
         :return: The number of pending messages.
         :rtype: int
         """
-        count = DWORD(0)
+        count = structures.DWORD(0)
         UcanGetMsgPending(self._handle, channel, flags, byref(count))
         return count.value
 
@@ -634,8 +719,8 @@ class UcanServer:
 
         .. note:: Only available for systec USB-CANmoduls (NOT for GW-001 and GW-002 !!!).
         """
-        tx_error_counter = DWORD(0)
-        rx_error_counter = DWORD(0)
+        tx_error_counter = structures.DWORD(0)
+        rx_error_counter = structures.DWORD(0)
         UcanGetCanErrorCounter(
             self._handle, channel, byref(tx_error_counter), byref(rx_error_counter)
         )
@@ -650,7 +735,7 @@ class UcanServer:
         """
         UcanSetTxTimeout(self._handle, channel, int(timeout * 1000))
 
-    def shutdown(self, channel=Channel.CHANNEL_ALL, shutdown_hardware=True):
+    def shutdown(self, channel=constants.Channel.CHANNEL_ALL, shutdown_hardware=True):
         """
         Shuts down all CAN interfaces and/or the hardware interface.
 
@@ -663,7 +748,7 @@ class UcanServer:
         for _channel, is_initialized in self._ch_is_initialized.items():
             if is_initialized and (
                 _channel == channel
-                or channel == Channel.CHANNEL_ALL
+                or channel == constants.Channel.CHANNEL_ALL
                 or shutdown_hardware
             ):
                 UcanDeinitCanEx(self._handle, _channel)
@@ -673,7 +758,7 @@ class UcanServer:
         if self._hw_is_initialized and shutdown_hardware:
             UcanDeinitHardware(self._handle)
             self._hw_is_initialized = False
-            self._handle = Handle(INVALID_HANDLE)
+            self._handle = structures.Handle(constants.INVALID_HANDLE)
 
     @staticmethod
     def get_user_dll_version():
@@ -683,7 +768,7 @@ class UcanServer:
         :return: Software version number.
         :rtype: int
         """
-        return UcanGetVersionEx(VersionType.VER_TYPE_USER_DLL)
+        return UcanGetVersionEx(constants.VersionType.VER_TYPE_USER_DLL)
 
     @staticmethod
     def set_debug_mode(level, filename, flags=0):
@@ -711,21 +796,21 @@ class UcanServer:
         :rtype: str
         """
         status_msgs = {
-            CanStatus.CANERR_TXMSGLOST: "Transmit message lost",
-            CanStatus.CANERR_MEMTEST: "Memory test failed",
-            CanStatus.CANERR_REGTEST: "Register test failed",
-            CanStatus.CANERR_QXMTFULL: "Transmit queue is full",
-            CanStatus.CANERR_QOVERRUN: "Receive queue overrun",
-            CanStatus.CANERR_QRCVEMPTY: "Receive queue is empty",
-            CanStatus.CANERR_BUSOFF: "Bus Off",
-            CanStatus.CANERR_BUSHEAVY: "Error Passive",
-            CanStatus.CANERR_BUSLIGHT: "Warning Limit",
-            CanStatus.CANERR_OVERRUN: "Rx-buffer is full",
-            CanStatus.CANERR_XMTFULL: "Tx-buffer is full",
+            constants.CanStatus.CANERR_TXMSGLOST: "Transmit message lost",
+            constants.CanStatus.CANERR_MEMTEST: "Memory test failed",
+            constants.CanStatus.CANERR_REGTEST: "Register test failed",
+            constants.CanStatus.CANERR_QXMTFULL: "Transmit queue is full",
+            constants.CanStatus.CANERR_QOVERRUN: "Receive queue overrun",
+            constants.CanStatus.CANERR_QRCVEMPTY: "Receive queue is empty",
+            constants.CanStatus.CANERR_BUSOFF: "Bus Off",
+            constants.CanStatus.CANERR_BUSHEAVY: "Error Passive",
+            constants.CanStatus.CANERR_BUSLIGHT: "Warning Limit",
+            constants.CanStatus.CANERR_OVERRUN: "Rx-buffer is full",
+            constants.CanStatus.CANERR_XMTFULL: "Tx-buffer is full",
         }
         return (
             "OK"
-            if can_status == CanStatus.CANERR_OK
+            if can_status == constants.CanStatus.CANERR_OK
             else ", ".join(
                 msg for status, msg in status_msgs.items() if can_status & status
             )
@@ -743,17 +828,17 @@ class UcanServer:
         :rtype: str
         """
         baudrate_msgs = {
-            Baudrate.BAUD_AUTO: "auto baudrate",
-            Baudrate.BAUD_10kBit: "10 kBit/sec",
-            Baudrate.BAUD_20kBit: "20 kBit/sec",
-            Baudrate.BAUD_50kBit: "50 kBit/sec",
-            Baudrate.BAUD_100kBit: "100 kBit/sec",
-            Baudrate.BAUD_125kBit: "125 kBit/sec",
-            Baudrate.BAUD_250kBit: "250 kBit/sec",
-            Baudrate.BAUD_500kBit: "500 kBit/sec",
-            Baudrate.BAUD_800kBit: "800 kBit/sec",
-            Baudrate.BAUD_1MBit: "1 MBit/s",
-            Baudrate.BAUD_USE_BTREX: "BTR Ext is used",
+            constants.Baudrate.BAUD_AUTO: "auto baudrate",
+            constants.Baudrate.BAUD_10kBit: "10 kBit/sec",
+            constants.Baudrate.BAUD_20kBit: "20 kBit/sec",
+            constants.Baudrate.BAUD_50kBit: "50 kBit/sec",
+            constants.Baudrate.BAUD_100kBit: "100 kBit/sec",
+            constants.Baudrate.BAUD_125kBit: "125 kBit/sec",
+            constants.Baudrate.BAUD_250kBit: "250 kBit/sec",
+            constants.Baudrate.BAUD_500kBit: "500 kBit/sec",
+            constants.Baudrate.BAUD_800kBit: "800 kBit/sec",
+            constants.Baudrate.BAUD_1MBit: "1 MBit/s",
+            constants.Baudrate.BAUD_USE_BTREX: "BTR Ext is used",
         }
         return baudrate_msgs.get(baudrate, "BTR is unknown (user specific)")
 
@@ -767,47 +852,47 @@ class UcanServer:
         :rtype: str
         """
         baudrate_ex_msgs = {
-            Baudrate.BAUDEX_AUTO: "auto baudrate",
-            Baudrate.BAUDEX_10kBit: "10 kBit/sec",
-            Baudrate.BAUDEX_SP2_10kBit: "10 kBit/sec",
-            Baudrate.BAUDEX_20kBit: "20 kBit/sec",
-            Baudrate.BAUDEX_SP2_20kBit: "20 kBit/sec",
-            Baudrate.BAUDEX_50kBit: "50 kBit/sec",
-            Baudrate.BAUDEX_SP2_50kBit: "50 kBit/sec",
-            Baudrate.BAUDEX_100kBit: "100 kBit/sec",
-            Baudrate.BAUDEX_SP2_100kBit: "100 kBit/sec",
-            Baudrate.BAUDEX_125kBit: "125 kBit/sec",
-            Baudrate.BAUDEX_SP2_125kBit: "125 kBit/sec",
-            Baudrate.BAUDEX_250kBit: "250 kBit/sec",
-            Baudrate.BAUDEX_SP2_250kBit: "250 kBit/sec",
-            Baudrate.BAUDEX_500kBit: "500 kBit/sec",
-            Baudrate.BAUDEX_SP2_500kBit: "500 kBit/sec",
-            Baudrate.BAUDEX_800kBit: "800 kBit/sec",
-            Baudrate.BAUDEX_SP2_800kBit: "800 kBit/sec",
-            Baudrate.BAUDEX_1MBit: "1 MBit/s",
-            Baudrate.BAUDEX_SP2_1MBit: "1 MBit/s",
-            Baudrate.BAUDEX_USE_BTR01: "BTR0/BTR1 is used",
+            constants.BaudrateEx.BAUDEX_AUTO: "auto baudrate",
+            constants.BaudrateEx.BAUDEX_10kBit: "10 kBit/sec",
+            constants.BaudrateEx.BAUDEX_SP2_10kBit: "10 kBit/sec",
+            constants.BaudrateEx.BAUDEX_20kBit: "20 kBit/sec",
+            constants.BaudrateEx.BAUDEX_SP2_20kBit: "20 kBit/sec",
+            constants.BaudrateEx.BAUDEX_50kBit: "50 kBit/sec",
+            constants.BaudrateEx.BAUDEX_SP2_50kBit: "50 kBit/sec",
+            constants.BaudrateEx.BAUDEX_100kBit: "100 kBit/sec",
+            constants.BaudrateEx.BAUDEX_SP2_100kBit: "100 kBit/sec",
+            constants.BaudrateEx.BAUDEX_125kBit: "125 kBit/sec",
+            constants.BaudrateEx.BAUDEX_SP2_125kBit: "125 kBit/sec",
+            constants.BaudrateEx.BAUDEX_250kBit: "250 kBit/sec",
+            constants.BaudrateEx.BAUDEX_SP2_250kBit: "250 kBit/sec",
+            constants.BaudrateEx.BAUDEX_500kBit: "500 kBit/sec",
+            constants.BaudrateEx.BAUDEX_SP2_500kBit: "500 kBit/sec",
+            constants.BaudrateEx.BAUDEX_800kBit: "800 kBit/sec",
+            constants.BaudrateEx.BAUDEX_SP2_800kBit: "800 kBit/sec",
+            constants.BaudrateEx.BAUDEX_1MBit: "1 MBit/s",
+            constants.BaudrateEx.BAUDEX_SP2_1MBit: "1 MBit/s",
+            constants.BaudrateEx.BAUDEX_USE_BTR01: "BTR0/BTR1 is used",
         }
         return baudrate_ex_msgs.get(baudrate_ex, "BTR is unknown (user specific)")
 
     @staticmethod
     def get_product_code_message(product_code):
         product_code_msgs = {
-            ProductCode.PRODCODE_PID_GW001: "GW-001",
-            ProductCode.PRODCODE_PID_GW002: "GW-002",
-            ProductCode.PRODCODE_PID_MULTIPORT: "Multiport CAN-to-USB G3",
-            ProductCode.PRODCODE_PID_BASIC: "USB-CANmodul1 G3",
-            ProductCode.PRODCODE_PID_ADVANCED: "USB-CANmodul2 G3",
-            ProductCode.PRODCODE_PID_USBCAN8: "USB-CANmodul8 G3",
-            ProductCode.PRODCODE_PID_USBCAN16: "USB-CANmodul16 G3",
-            ProductCode.PRODCODE_PID_RESERVED3: "Reserved",
-            ProductCode.PRODCODE_PID_ADVANCED_G4: "USB-CANmodul2 G4",
-            ProductCode.PRODCODE_PID_BASIC_G4: "USB-CANmodul1 G4",
-            ProductCode.PRODCODE_PID_RESERVED1: "Reserved",
-            ProductCode.PRODCODE_PID_RESERVED2: "Reserved",
+            constants.ProductCode.PRODCODE_PID_GW001: "GW-001",
+            constants.ProductCode.PRODCODE_PID_GW002: "GW-002",
+            constants.ProductCode.PRODCODE_PID_MULTIPORT: "Multiport CAN-to-USB G3",
+            constants.ProductCode.PRODCODE_PID_BASIC: "USB-CANmodul1 G3",
+            constants.ProductCode.PRODCODE_PID_ADVANCED: "USB-CANmodul2 G3",
+            constants.ProductCode.PRODCODE_PID_USBCAN8: "USB-CANmodul8 G3",
+            constants.ProductCode.PRODCODE_PID_USBCAN16: "USB-CANmodul16 G3",
+            constants.ProductCode.PRODCODE_PID_RESERVED3: "Reserved",
+            constants.ProductCode.PRODCODE_PID_ADVANCED_G4: "USB-CANmodul2 G4",
+            constants.ProductCode.PRODCODE_PID_BASIC_G4: "USB-CANmodul1 G4",
+            constants.ProductCode.PRODCODE_PID_RESERVED1: "Reserved",
+            constants.ProductCode.PRODCODE_PID_RESERVED2: "Reserved",
         }
         return product_code_msgs.get(
-            product_code & PRODCODE_MASK_PID, "Product code is unknown"
+            product_code & constants.PRODCODE_MASK_PID, "Product code is unknown"
         )
 
     @classmethod
@@ -870,29 +955,29 @@ class UcanServer:
         :rtype: bool
         """
         return (
-            hw_info_ex.m_dwProductCode & PRODCODE_MASK_PID
-        ) >= ProductCode.PRODCODE_PID_MULTIPORT
+            hw_info_ex.m_dwProductCode & constants.PRODCODE_MASK_PID
+        ) >= constants.ProductCode.PRODCODE_PID_MULTIPORT
 
     @classmethod
     def check_is_G4(cls, hw_info_ex):
         """
-        Checks whether the module is an USB-CANmodul of fourth generation (G4).
+        Checks whether the module is a USB-CANmodul of fourth generation (G4).
 
         :param HardwareInfoEx hw_info_ex:
             Extended hardware information structure (see method :meth:`get_hardware_info`).
-        :return: True when the module is an USB-CANmodul G4, otherwise False.
+        :return: True when the module is a USB-CANmodul G4, otherwise False.
         :rtype: bool
         """
-        return hw_info_ex.m_dwProductCode & PRODCODE_PID_G4
+        return hw_info_ex.m_dwProductCode & constants.PRODCODE_PID_G4
 
     @classmethod
     def check_is_G3(cls, hw_info_ex):
         """
-        Checks whether the module is an USB-CANmodul of third generation (G3).
+        Checks whether the module is a USB-CANmodul of third generation (G3).
 
         :param HardwareInfoEx hw_info_ex:
             Extended hardware information structure (see method :meth:`get_hardware_info`).
-        :return: True when the module is an USB-CANmodul G3, otherwise False.
+        :return: True when the module is a USB-CANmodul G3, otherwise False.
         :rtype: bool
         """
         return cls.check_is_systec(hw_info_ex) and not cls.check_is_G4(hw_info_ex)
@@ -922,7 +1007,7 @@ class UcanServer:
         :rtype: bool
         """
         return cls.check_is_systec(hw_info_ex) and (
-            hw_info_ex.m_dwProductCode & PRODCODE_PID_TWO_CHA
+            hw_info_ex.m_dwProductCode & constants.PRODCODE_PID_TWO_CHA
         )
 
     @classmethod
@@ -935,7 +1020,7 @@ class UcanServer:
         :return: True when the module does support a termination resistor.
         :rtype: bool
         """
-        return hw_info_ex.m_dwProductCode & PRODCODE_PID_TERM
+        return hw_info_ex.m_dwProductCode & constants.PRODCODE_PID_TERM
 
     @classmethod
     def check_support_user_port(cls, hw_info_ex):
@@ -949,12 +1034,12 @@ class UcanServer:
         """
         return (
             (
-                (hw_info_ex.m_dwProductCode & PRODCODE_MASK_PID)
-                != ProductCode.PRODCODE_PID_BASIC
+                (hw_info_ex.m_dwProductCode & constants.PRODCODE_MASK_PID)
+                != constants.ProductCode.PRODCODE_PID_BASIC
             )
             and (
-                (hw_info_ex.m_dwProductCode & PRODCODE_MASK_PID)
-                != ProductCode.PRODCODE_PID_RESERVED1
+                (hw_info_ex.m_dwProductCode & constants.PRODCODE_MASK_PID)
+                != constants.ProductCode.PRODCODE_PID_RESERVED1
             )
             and cls.check_version_is_equal_or_higher(hw_info_ex.m_dwFwVersionEx, 2, 16)
         )
@@ -969,7 +1054,7 @@ class UcanServer:
         :return: True when the module does support a user I/O port including the read back feature, otherwise False.
         :rtype: bool
         """
-        return hw_info_ex.m_dwProductCode & PRODCODE_PID_RBUSER
+        return hw_info_ex.m_dwProductCode & constants.PRODCODE_PID_RBUSER
 
     @classmethod
     def check_support_rb_can_port(cls, hw_info_ex):
@@ -981,7 +1066,7 @@ class UcanServer:
         :return: True when the module does support a CAN I/O port including the read back feature, otherwise False.
         :rtype: bool
         """
-        return hw_info_ex.m_dwProductCode & PRODCODE_PID_RBCAN
+        return hw_info_ex.m_dwProductCode & constants.PRODCODE_PID_RBCAN
 
     @classmethod
     def check_support_ucannet(cls, hw_info_ex):
@@ -1043,24 +1128,24 @@ class UcanServer:
         Is the actual callback function for :meth:`init_hw_connect_control_ex`.
 
         :param event:
-            Event (:data:`CbEvent.EVENT_CONNECT`, :data:`CbEvent.EVENT_DISCONNECT` or
-            :data:`CbEvent.EVENT_FATALDISCON`).
+            Event (:data:`constants.CbEvent.EVENT_CONNECT`, :data:`constants.CbEvent.EVENT_DISCONNECT` or
+            :data:`constants.CbEvent.EVENT_FATALDISCON`).
         :param param: Additional parameter depending on the event.
-        - CbEvent.EVENT_CONNECT: always 0
-        - CbEvent.EVENT_DISCONNECT: always 0
-        - CbEvent.EVENT_FATALDISCON: USB-CAN-Handle of the disconnected module
+        - constants.CbEvent.EVENT_CONNECT: always 0
+        - constants.CbEvent.EVENT_DISCONNECT: always 0
+        - constants.CbEvent.EVENT_FATALDISCON: USB-CAN-Handle of the disconnected module
         :param arg: Additional parameter defined with :meth:`init_hardware_ex` (not used in this wrapper class).
         """
         log.debug("Event: %s, Param: %s", event, param)
 
-        if event == CbEvent.EVENT_FATALDISCON:
+        if event == constants.CbEvent.EVENT_FATALDISCON:
             self.fatal_disconnect_event(param)
-        elif event == CbEvent.EVENT_CONNECT:
+        elif event == constants.CbEvent.EVENT_CONNECT:
             self.connect_event()
-        elif event == CbEvent.EVENT_DISCONNECT:
+        elif event == constants.CbEvent.EVENT_DISCONNECT:
             self.disconnect_event()
 
-    def _callback(self, handle, event, channel, arg):
+    def _callback(self, Handle, event, channel, arg):
         """
         Is called if a working event occurred.
 
@@ -1070,31 +1155,33 @@ class UcanServer:
             CAN channel (:data:`Channel.CHANNEL_CH0`, :data:`Channel.CHANNEL_CH1` or :data:`Channel.CHANNEL_ANY`).
         :param arg: Additional parameter defined with :meth:`init_hardware_ex`.
         """
-        log.debug("Handle: %s, Event: %s, Channel: %s", handle, event, channel)
+        log.debug(
+            "Handle: %s, Event: %s, Channel: %s", structures.Handle, event, channel
+        )
 
-        if event == CbEvent.EVENT_INITHW:
+        if event == constants.CbEvent.EVENT_INITHW:
             self.init_hw_event()
-        elif event == CbEvent.EVENT_init_can:
+        elif event == constants.CbEvent.EVENT_init_can:
             self.init_can_event(channel)
-        elif event == CbEvent.EVENT_RECEIVE:
+        elif event == constants.CbEvent.EVENT_RECEIVE:
             self.can_msg_received_event(channel)
-        elif event == CbEvent.EVENT_STATUS:
+        elif event == constants.CbEvent.EVENT_STATUS:
             self.status_event(channel)
-        elif event == CbEvent.EVENT_DEINIT_CAN:
+        elif event == constants.CbEvent.EVENT_DEINIT_CAN:
             self.deinit_can_event(channel)
-        elif event == CbEvent.EVENT_DEINITHW:
+        elif event == constants.CbEvent.EVENT_DEINITHW:
             self.deinit_hw_event()
 
     def init_hw_event(self):
         """
-        Event occurs when an USB-CANmodul has been initialized (see method :meth:`init_hardware`).
+        Event occurs when a USB-CANmodul has been initialized (see method :meth:`init_hardware`).
 
         .. note:: To be overridden by subclassing.
         """
 
     def init_can_event(self, channel):
         """
-        Event occurs when a CAN interface of an USB-CANmodul has been initialized.
+        Event occurs when a CAN interface of a USB-CANmodul has been initialized.
 
         :param int channel: Specifies the CAN channel which was initialized (see method :meth:`init_can`).
 
@@ -1134,7 +1221,7 @@ class UcanServer:
 
     def deinit_hw_event(self):
         """
-        Event occurs when an USB-CANmodul has been deinitialized (see method :meth:`shutdown`).
+        Event occurs when a USB-CANmodul has been deinitialized (see method :meth:`shutdown`).
 
         .. note:: To be overridden by subclassing.
         """
@@ -1148,14 +1235,14 @@ class UcanServer:
 
     def disconnect_event(self):
         """
-        Event occurs when an USB-CANmodul has been disconnected from the host.
+        Event occurs when a USB-CANmodul has been disconnected from the host.
 
         .. note:: To be overridden by subclassing.
         """
 
     def fatal_disconnect_event(self, device_number):
         """
-        Event occurs when an USB-CANmodul has been disconnected from the host which was currently initialized.
+        Event occurs when a USB-CANmodul has been disconnected from the host which was currently initialized.
 
         No method can be called for this module.
 
@@ -1165,4 +1252,4 @@ class UcanServer:
         """
 
 
-UcanServer._enum_callback_ref = EnumCallback(UcanServer._enum_callback)
+UcanServer._enum_callback_ref = structures.EnumCallback(UcanServer._enum_callback)

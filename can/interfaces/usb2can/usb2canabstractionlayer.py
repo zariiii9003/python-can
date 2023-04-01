@@ -4,7 +4,7 @@ Socket CAN is recommended under Unix/Linux systems.
 """
 
 import logging
-from ctypes import *
+from ctypes import Structure, c_byte, c_char_p, c_long, c_ubyte, c_ulong, windll
 from enum import IntEnum
 
 import can

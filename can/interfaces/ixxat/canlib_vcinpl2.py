@@ -27,13 +27,20 @@ from can.exceptions import CanInitializationError, CanInterfaceNotImplementedErr
 from can.util import deprecated_args_alias
 
 from . import constants, structures
-from .exceptions import *
+from .exceptions import (
+    VCIBusOffError,
+    VCIDeviceNotFoundError,
+    VCIError,
+    VCIRxQueueEmptyError,
+    VCITimeout,
+)
 
 __all__ = [
     "VCITimeout",
     "VCIError",
     "VCIBusOffError",
     "VCIDeviceNotFoundError",
+    "VCIRxQueueEmptyError",
     "IXXATBus",
     "vciFormatError",
 ]
