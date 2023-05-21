@@ -54,10 +54,10 @@ The documentation can be built with::
 The linters can be run with::
 
     pip install -e .[lint]
-    black --check can
-    mypy can
-    ruff check can
-    pylint --rcfile=.pylintrc can/**.py
+    black --check src
+    mypy src
+    ruff check src
+    pylint --rcfile=.pylintrc src/can/*.py src/can/io
 
 
 Creating a new interface/backend

@@ -131,5 +131,5 @@ reinstall. Download or clone the source repository then:
 
 ::
 
-    python setup.py develop
+    pip install --editable .
 

@@ -97,17 +97,15 @@ jobs:
         mypy --python-version 3.11 .
     - name: ruff
       run: |
-        ruff check can
+        ruff check src
     - name: pylint
       run: |
         pylint --rcfile=.pylintrc \
-        can/**.py \
-        can/io \
-        setup.py \
         doc/conf.py \
-        scripts/**.py \
         examples/**.py \
-        can/interfaces/socketcan
+        src/can/*.py \
+        src/can/io \
+        src/can/interfaces/socketcan
 
   format:
     runs-on: ubuntu-latest
@@ -123,7 +121,7 @@ jobs:
         pip install -e .[lint]
     - name: Code Format Check with Black
       run: |
-        black --check --verbose .
+        black --check .
 
   docs:
     runs-on: ubuntu-latest
