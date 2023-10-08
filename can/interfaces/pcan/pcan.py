@@ -1,6 +1,7 @@
 """
 Enable basic CAN over a PCAN USB device.
 """
+import functools
 import logging
 import platform
 import time
@@ -268,8 +269,13 @@ class PcanBus(BusABC):
         if isinstance(timing, BitTiming):
             timing = check_or_adjust_timing_clock(timing, VALID_PCAN_CAN_CLOCKS)
             pcan_bitrate = TPCANBaudrate(timing.btr0 << 8 | timing.btr1)
-            result = self.m_objPCANBasic.Initialize(
-                self.m_PcanHandle, pcan_bitrate, hwtype, ioport, interrupt
+            self._initialization_func = functools.partial(
+                self.m_objPCANBasic.Initialize,
+                self.m_PcanHandle,
+                pcan_bitrate,
+                hwtype,
+                ioport,
+                interrupt,
             )
         elif is_fd:
             if isinstance(timing, BitTimingFd):
@@ -288,16 +294,24 @@ class PcanBus(BusABC):
             ]
 
             self.fd_bitrate = ", ".join(fd_parameters_values).encode("ascii")
-
-            result = self.m_objPCANBasic.InitializeFD(
-                self.m_PcanHandle, self.fd_bitrate
+            self._initialization_func = functools.partial(
+                self.m_objPCANBasic.InitializeFD,
+                self.m_PcanHandle,
+                self.fd_bitrate,
             )
 
         else:
             pcan_bitrate = PCAN_BITRATES.get(bitrate, PCAN_BAUD_500K)
-            result = self.m_objPCANBasic.Initialize(
-                self.m_PcanHandle, pcan_bitrate, hwtype, ioport, interrupt
+            self._initialization_func = functools.partial(
+                self.m_objPCANBasic.Initialize,
+                self.m_PcanHandle,
+                pcan_bitrate,
+                hwtype,
+                ioport,
+                interrupt,
             )
+
+        result = self._initialization_func()
 
         if result != PCAN_ERROR_OK:
             raise PcanCanInitializationError(self._get_formatted_error(result))
@@ -448,8 +462,16 @@ class PcanBus(BusABC):
         """
         Command the PCAN driver to reset the bus after an error.
         """
-        status = self.m_objPCANBasic.Reset(self.m_PcanHandle)
-        return status == PCAN_ERROR_OK
+        self.m_objPCANBasic.Uninitialize(self.m_PcanHandle)
+        result = self._initialization_func()
+        if result != PCAN_ERROR_OK:
+            raise PcanCanOperationError(self._get_formatted_error(result))
+
+    def flush_tx_buffer(self) -> None:
+        """Resets the receive and transmit queues of a PCAN Channel."""
+        result = self.m_objPCANBasic.Reset(self.m_PcanHandle)
+        if result != PCAN_ERROR_OK:
+            raise PcanCanOperationError(self._get_formatted_error(result))
 
     def get_device_number(self):
         """
