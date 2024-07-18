@@ -7,6 +7,7 @@ Similar to canplayer in the can-utils package.
 
 import argparse
 import errno
+import itertools
 import sys
 from datetime import datetime
 from typing import Iterable, cast
@@ -67,6 +68,15 @@ def main() -> None:
     )
 
     parser.add_argument(
+        "-l",
+        "--loop",
+        metavar="NUM",
+        type=lambda x: x if x == "i" else int(x),
+        help="Process input file NUM times. Use 'i' for infinite loop.",
+        default=1,
+    )
+
+    parser.add_argument(
         "infile",
         metavar="input-file",
         type=str,
@@ -95,16 +105,21 @@ def main() -> None:
             )
 
             print(f"Can LogReader (Started on {datetime.now()})")
+            for loop_num in itertools.count(start=1):
+                try:
+                    for message in in_sync:
+                        if message.is_error_frame and not error_frames:
+                            continue
+                        if verbosity >= 3:
+                            print(message)
+                        bus.send(message)
+                except KeyboardInterrupt:
+                    pass
 
-            try:
-                for message in in_sync:
-                    if message.is_error_frame and not error_frames:
-                        continue
-                    if verbosity >= 3:
-                        print(message)
-                    bus.send(message)
-            except KeyboardInterrupt:
-                pass
+                if results.loop == "i":
+                    continue
+                if loop_num >= results.loop:
+                    break
 
 
 if __name__ == "__main__":
