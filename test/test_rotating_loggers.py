@@ -59,78 +59,86 @@ class TestBaseRotatingLogger:
         assert hasattr(can.io.BaseRotatingLogger, "do_rollover")
 
     def test_get_new_writer(self, tmp_path):
-        with self._get_instance(tmp_path / "__unused.txt") as logger_instance:
-            writer = logger_instance._get_new_writer(tmp_path / "file.ASC")
-            assert isinstance(writer, can.ASCWriter)
-            writer.stop()
+        logger_instance = self._get_instance(tmp_path / "__unused.txt")
+        logger_instance.writer.stop()
 
-            writer = logger_instance._get_new_writer(tmp_path / "file.BLF")
-            assert isinstance(writer, can.BLFWriter)
-            writer.stop()
+        writer = logger_instance._get_new_writer(tmp_path / "file.ASC")
+        assert isinstance(writer, can.ASCWriter)
+        writer.stop()
 
-            writer = logger_instance._get_new_writer(tmp_path / "file.CSV")
-            assert isinstance(writer, can.CSVWriter)
-            writer.stop()
+        writer = logger_instance._get_new_writer(tmp_path / "file.BLF")
+        assert isinstance(writer, can.BLFWriter)
+        writer.stop()
 
-            writer = logger_instance._get_new_writer(tmp_path / "file.LOG")
-            assert isinstance(writer, can.CanutilsLogWriter)
-            writer.stop()
+        writer = logger_instance._get_new_writer(tmp_path / "file.CSV")
+        assert isinstance(writer, can.CSVWriter)
+        writer.stop()
 
-            writer = logger_instance._get_new_writer(tmp_path / "file.TXT")
-            assert isinstance(writer, can.Printer)
-            writer.stop()
+        writer = logger_instance._get_new_writer(tmp_path / "file.LOG")
+        assert isinstance(writer, can.CanutilsLogWriter)
+        writer.stop()
+
+        writer = logger_instance._get_new_writer(tmp_path / "file.TXT")
+        assert isinstance(writer, can.Printer)
+        writer.stop()
 
     def test_rotation_filename(self, tmp_path):
-        with self._get_instance(tmp_path / "__unused.txt") as logger_instance:
-            default_name = "default"
-            assert logger_instance.rotation_filename(default_name) == "default"
+        logger_instance = self._get_instance(tmp_path / "__unused.txt")
+        logger_instance.writer.stop()
 
-            logger_instance.namer = lambda x: x + "_by_namer"
-            assert logger_instance.rotation_filename(default_name) == "default_by_namer"
+        default_name = "default"
+        assert logger_instance.rotation_filename(default_name) == "default"
+
+        logger_instance.namer = lambda x: x + "_by_namer"
+        assert logger_instance.rotation_filename(default_name) == "default_by_namer"
 
     def test_rotate_without_rotator(self, tmp_path):
-        with self._get_instance(tmp_path / "__unused.txt") as logger_instance:
-            source = str(tmp_path / "source.txt")
-            dest = str(tmp_path / "dest.txt")
+        logger_instance = self._get_instance(tmp_path / "__unused.txt")
+        logger_instance.writer.stop()
 
-            assert os.path.exists(source) is False
-            assert os.path.exists(dest) is False
+        source = str(tmp_path / "source.txt")
+        dest = str(tmp_path / "dest.txt")
 
-            logger_instance._writer = logger_instance._get_new_writer(source)
-            logger_instance.stop()
+        assert os.path.exists(source) is False
+        assert os.path.exists(dest) is False
 
-            assert os.path.exists(source) is True
-            assert os.path.exists(dest) is False
+        logger_instance._writer = logger_instance._get_new_writer(source)
+        logger_instance.stop()
 
-            logger_instance.rotate(source, dest)
+        assert os.path.exists(source) is True
+        assert os.path.exists(dest) is False
 
-            assert os.path.exists(source) is False
-            assert os.path.exists(dest) is True
+        logger_instance.rotate(source, dest)
+
+        assert os.path.exists(source) is False
+        assert os.path.exists(dest) is True
 
     def test_rotate_with_rotator(self, tmp_path):
-        with self._get_instance(tmp_path / "__unused.txt") as logger_instance:
-            rotator_func = Mock()
-            logger_instance.rotator = rotator_func
+        logger_instance = self._get_instance(tmp_path / "__unused.txt")
+        logger_instance.writer.stop()
 
-            source = str(tmp_path / "source.txt")
-            dest = str(tmp_path / "dest.txt")
+        rotator_func = Mock()
+        logger_instance.rotator = rotator_func
 
-            assert os.path.exists(source) is False
-            assert os.path.exists(dest) is False
+        source = str(tmp_path / "source.txt")
+        dest = str(tmp_path / "dest.txt")
 
-            logger_instance._writer = logger_instance._get_new_writer(source)
-            logger_instance.stop()
+        assert os.path.exists(source) is False
+        assert os.path.exists(dest) is False
 
-            assert os.path.exists(source) is True
-            assert os.path.exists(dest) is False
+        logger_instance._writer = logger_instance._get_new_writer(source)
+        logger_instance.stop()
 
-            logger_instance.rotate(source, dest)
-            rotator_func.assert_called_with(source, dest)
+        assert os.path.exists(source) is True
+        assert os.path.exists(dest) is False
 
-            # assert that no rotation was performed since rotator_func
-            # does not do anything
-            assert os.path.exists(source) is True
-            assert os.path.exists(dest) is False
+        logger_instance.rotate(source, dest)
+        rotator_func.assert_called_with(source, dest)
+
+        # assert that no rotation was performed since rotator_func
+        # does not do anything
+        assert os.path.exists(source) is True
+        assert os.path.exists(dest) is False
 
     def test_stop(self, tmp_path):
         """Test if stop() method of writer is called."""
@@ -181,12 +189,14 @@ class TestBaseRotatingLogger:
             writers_on_message_received.assert_called_with(msg)
 
     def test_issue_1792(self, tmp_path):
-        with self._get_instance(tmp_path / "__unused.log") as logger_instance:
-            writer = logger_instance._get_new_writer(
-                tmp_path / "2017_Jeep_Grand_Cherokee_3.6L_V6.log"
-            )
-            assert isinstance(writer, can.CanutilsLogWriter)
-            writer.stop()
+        logger_instance = self._get_instance(tmp_path / "__unused.txt")
+        logger_instance.writer.stop()
+
+        writer = logger_instance._get_new_writer(
+            tmp_path / "2017_Jeep_Grand_Cherokee_3.6L_V6.log"
+        )
+        assert isinstance(writer, can.CanutilsLogWriter)
+        writer.stop()
 
 
 class TestSizedRotatingLogger:
