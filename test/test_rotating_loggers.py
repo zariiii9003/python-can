@@ -33,7 +33,7 @@ class TestBaseRotatingLogger:
 
             @property
             def writer(self) -> FileIOMessageWriter:
-                return cast(FileIOMessageWriter, self._writer)
+                return cast("FileIOMessageWriter", self._writer)
 
             def should_rollover(self, msg: can.Message) -> bool:
                 return False

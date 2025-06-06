@@ -22,7 +22,7 @@ class SoftwareTestCase(unittest.TestCase):
             bus = can.Bus(interface="ixxat", fd=True, channel=0)
             bus.shutdown()
         except can.CanInterfaceNotImplementedError:
-            raise unittest.SkipTest("not available on this platform")
+            raise unittest.SkipTest("not available on this platform") from None
 
     def test_bus_creation(self):
         # channel must be >= 0
@@ -48,7 +48,7 @@ class HardwareTestCase(unittest.TestCase):
             bus = can.Bus(interface="ixxat", fd=True, channel=0)
             bus.shutdown()
         except can.CanInterfaceNotImplementedError:
-            raise unittest.SkipTest("not available on this platform")
+            raise unittest.SkipTest("not available on this platform") from None
 
     def test_bus_creation(self):
         # non-existent channel -> use arbitrary high value

@@ -28,8 +28,8 @@ IS_CI = IS_TRAVIS or IS_GITHUB_ACTIONS or env("CI") or env("CONTINUOUS_INTEGRATI
 
 if IS_TRAVIS and IS_GITHUB_ACTIONS:
     raise OSError(
-        f"only one of IS_TRAVIS ({IS_TRAVIS}) and IS_GITHUB_ACTIONS ({IS_GITHUB_ACTIONS}) may be True at the "
-        "same time"
+        f"only one of IS_TRAVIS ({IS_TRAVIS}) and IS_GITHUB_ACTIONS ({IS_GITHUB_ACTIONS}) "
+        "may be True at the same time"
     )
 
 

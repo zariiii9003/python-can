@@ -31,7 +31,7 @@ class SerialDummy:
 
     def read(self, size=1):
         return_value = bytearray()
-        for i in range(size):
+        for _ in range(size):
             return_value.append(self.msg.pop(0))
         return bytes(return_value)
 
@@ -68,7 +68,7 @@ class SimpleSerialTestBase(ComparingMessagesTestCase):
         Tests the transfer from a 1 - 8 byte payload
         """
         payload = bytearray()
-        for b in range(1, 9):
+        for _ in range(1, 9):
             payload.append(0)
             msg = can.Message(data=payload)
             self.bus.send(msg)
@@ -179,20 +179,21 @@ class SimpleSerialTestBase(ComparingMessagesTestCase):
 
     def test_when_no_fileno(self):
         """
-        Tests for the fileno method catching the missing pyserial implementeation on the Windows platform
+        Tests for the fileno method catching the missing
+        pyserial implementeation on the Windows platform
         """
         try:
             fileno = self.bus.fileno()
         except NotImplementedError:
             pass  # allow it to be left non-implemented for Windows platform
         else:
-            fileno.__gt__ = (
-                lambda self, compare: True
-            )  # Current platform implements fileno, so get the mock to respond to a greater than comparison
+            # Current platform implements fileno, so get the
+            # mock to respond to a greater than comparison
+            fileno.__gt__ = lambda self, compare: True
             self.assertIsNotNone(fileno)
-            self.assertFalse(
-                fileno == -1
-            )  # forcing the value to -1 is the old way of managing fileno on Windows but it is not compatible with notifiers
+            # forcing the value to -1 is the old way of managing
+            # fileno on Windows but it is not compatible with notifiers
+            self.assertFalse(fileno == -1)
             self.assertTrue(fileno > 0)
 
 

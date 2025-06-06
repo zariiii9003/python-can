@@ -35,10 +35,10 @@ class ControllerAreaNetworkTestCase(unittest.TestCase):
     extended_flags = [rbool() for _ in range(num_messages)]
 
     ids = list(range(num_messages))
-    data = list(
+    data = [
         bytearray([random.randrange(0, 2**8 - 1) for a in range(random.randrange(9))])
         for b in range(num_messages)
-    )
+    ]
 
     def setUp(self):
         # Save all can.rc defaults

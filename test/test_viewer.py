@@ -22,7 +22,6 @@
 # Web      :  http://www.lauszus.com
 # e-mail   :  lauszus@gmail.com
 
-import argparse
 import math
 import os
 import random
@@ -30,13 +29,13 @@ import struct
 import time
 import unittest
 from collections import defaultdict
-from test.config import IS_CI
 from unittest.mock import patch
 
 import pytest
 
 import can
 from can.viewer import CanViewer, _parse_viewer_args
+from test.config import IS_CI
 
 # Allow the curses module to be missing (e.g. on PyPy on Windows)
 try:
@@ -44,7 +43,7 @@ try:
 
     CURSES_AVAILABLE = True
 except ImportError:
-    curses = None  # type: ignore
+    curses = None
     CURSES_AVAILABLE = False
 
 
@@ -158,8 +157,8 @@ class CanViewerTest(unittest.TestCase):
         self.can_viewer = CanViewer(self.stdscr_dummy, bus, data_structs, testing=True)
 
     def tearDown(self):
-        # Run the viewer after the test, this is done, so we can receive the CAN-Bus messages and make sure that they
-        # are parsed correctly
+        # Run the viewer after the test, this is done, so we can receive the CAN-Bus messages
+        # and make sure that they are parsed correctly
         self.can_viewer.run()
 
     def test_send(self):
@@ -241,7 +240,8 @@ class CanViewerTest(unittest.TestCase):
                         if col >= 52 + _id["msg"].dlc * 3:
                             self.assertEqual(v, " ")
                 elif _id["msg"].arbitration_id == 0x102:
-                    # Make sure the parsed values have been cleared after the shorted message was send
+                    # Make sure the parsed values have been cleared
+                    # after the shorted message was send
                     for col, v in self.stdscr_dummy.draw_buffer[_id["row"]].items():
                         if col >= 77 + _id["values_string_length"]:
                             self.assertEqual(v, " ")
@@ -300,8 +300,7 @@ class CanViewerTest(unittest.TestCase):
                     data = args
 
                 return struct_t.pack(*data)
-        else:
-            raise ValueError(f"Unknown command: 0x{cmd:02X}")
+        raise ValueError(f"Unknown command: 0x{cmd:02X}")
 
     def test_pack_unpack(self):
         CANOPEN_TPDO1 = 0x180
@@ -309,8 +308,8 @@ class CanViewerTest(unittest.TestCase):
         CANOPEN_TPDO3 = 0x380
         CANOPEN_TPDO4 = 0x480
 
-        # Dictionary used to convert between Python values and C structs represented as Python strings.
-        # If the value is 'None' then the message does not contain any data package.
+        # Dictionary used to convert between Python values and C structs represented as
+        # Python strings. If the value is 'None' then the message does not contain any data package.
         #
         # The struct package is used to unpack the received data.
         # Note the data is assumed to be in little-endian byte order.
@@ -325,8 +324,9 @@ class CanViewerTest(unittest.TestCase):
         # f = float (32-bits), d = double (64-bits)
         #
         # An optional conversion from real units to integers can be given as additional arguments.
-        # In order to convert from raw integer value the SI-units are multiplied with the values and similarly the values
-        # are divided by the value in order to convert from real units to raw integer values.
+        # In order to convert from raw integer value the SI-units are multiplied with the values and
+        #  similarly the values are divided by the value in order to convert from real units to
+        # raw integer values.
         data_structs = {
             # CANopen node 1
             CANOPEN_TPDO1 + 1: struct.Struct("<bBh2H"),

@@ -5,7 +5,18 @@ from unittest.mock import Mock, patch
 
 import can
 from can.interfaces.systec import ucan, ucanbus
-from can.interfaces.systec.ucan import *
+from can.interfaces.systec.constants import (
+    ACR_ALL,
+    AMR_ALL,
+    DEFAULT_BUFFER_ENTRIES,
+    Baudrate,
+    BaudrateEx,
+    Mode,
+    MsgFrameFormat,
+    OutputControl,
+    ResetFlags,
+)
+from can.interfaces.systec.structures import CanMsg, InitCanParam
 
 
 class SystecTest(unittest.TestCase):

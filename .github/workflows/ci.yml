@@ -98,7 +98,7 @@ jobs:
         mypy --python-version 3.13 .
     - name: ruff
       run: |
-        ruff check can
+        ruff check can examples doc test
     - name: pylint
       run: |
         pylint \

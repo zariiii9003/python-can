@@ -19,7 +19,7 @@ from can.util import (
 
 
 class RenameKwargsTest(unittest.TestCase):
-    expected_kwargs = dict(a=1, b=2, c=3, d=4)
+    expected_kwargs = {"a": 1, "b": 2, "c": 3, "d": 4}
 
     def _test(self, start: str, end: str, kwargs, aliases):
         # Test that we do get the DeprecationWarning when called with deprecated kwargs
@@ -43,22 +43,22 @@ class RenameKwargsTest(unittest.TestCase):
             warnings.resetwarnings()
 
     def test_rename(self):
-        kwargs = dict(old_a=1, old_b=2, c=3, d=4)
+        kwargs = {"old_a": 1, "old_b": 2, "c": 3, "d": 4}
         aliases = {"old_a": "a", "old_b": "b"}
         self._test("1.0", "2.0", kwargs, aliases)
 
     def test_obsolete(self):
-        kwargs = dict(a=1, b=2, c=3, d=4, z=10)
+        kwargs = {"a": 1, "b": 2, "c": 3, "d": 4, "z": 10}
         aliases = {"z": None}
         self._test("1.0", "2.0", kwargs, aliases)
 
     def test_rename_and_obsolete(self):
-        kwargs = dict(old_a=1, old_b=2, c=3, d=4, z=10)
+        kwargs = {"old_a": 1, "old_b": 2, "c": 3, "d": 4, "z": 10}
         aliases = {"old_a": "a", "old_b": "b", "z": None}
         self._test("1.0", "2.0", kwargs, aliases)
 
     def test_with_new_and_alias_present(self):
-        kwargs = dict(old_a=1, a=1, b=2, c=3, d=4, z=10)
+        kwargs = {"old_a": 1, "a": 1, "b": 2, "c": 3, "d": 4, "z": 10}
         aliases = {"old_a": "a", "old_b": "b", "z": None}
         with self.assertRaises(TypeError):
             self._test("1.0", "2.0", kwargs, aliases)
@@ -140,7 +140,7 @@ class TestBusConfig(unittest.TestCase):
         Test that an exception is not raised when using
         integers for timing values in config.
         """
-        timing_conf = dict(tseg1=5, tseg2=10, sjw=25)
+        timing_conf = {"tseg1": 5, "tseg2": 10, "sjw": 25}
         try:
             _create_bus_config({**self.base_config, **timing_conf})
         except TypeError as e:

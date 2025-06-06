@@ -5,18 +5,18 @@ This module tests cyclic send tasks.
 """
 
 import gc
+import platform
 import sys
 import time
 import traceback
 import unittest
 from threading import Thread
 from time import sleep
-from typing import List
 from unittest.mock import MagicMock
 
 import can
+from test.config import IS_CI, IS_PYPY
 
-from .config import *
 from .message_helper import ComparingMessagesTestCase
 
 
@@ -49,9 +49,7 @@ class SimpleCyclicSendTaskTest(unittest.TestCase, ComparingMessagesTestCase):
                 # About 100 messages should have been transmitted
                 self.assertTrue(
                     80 <= size <= 120,
-                    "100 +/- 20 messages should have been transmitted. But queue contained {}".format(
-                        size
-                    ),
+                    f"100 +/- 20 messages should have been transmitted. But queue contained {size}",
                 )
                 last_msg = bus2.recv()
                 next_last_msg = bus2.recv()
@@ -87,7 +85,8 @@ class SimpleCyclicSendTaskTest(unittest.TestCase, ComparingMessagesTestCase):
         assert len(bus._periodic_tasks) == 10
 
         for task in tasks:
-            # Note calling task.stop will remove the task from the Bus's internal task management list
+            # Note calling task.stop will remove the
+            # task from the Bus's internal task management list
             task.stop()
 
         self.join_threads([task.thread for task in tasks], 5.0)
@@ -263,7 +262,7 @@ class SimpleCyclicSendTaskTest(unittest.TestCase, ComparingMessagesTestCase):
         task.stop()
 
     def test_modifier_callback(self) -> None:
-        msg_list: List[can.Message] = []
+        msg_list: list[can.Message] = []
 
         def increment_first_byte(msg: can.Message) -> None:
             msg.data[0] = (msg.data[0] + 1) % 256
@@ -290,8 +289,8 @@ class SimpleCyclicSendTaskTest(unittest.TestCase, ComparingMessagesTestCase):
         self.assertEqual(b"\x07\x00\x00\x00\x00\x00\x00\x00", bytes(msg_list[6].data))
 
     @staticmethod
-    def join_threads(threads: List[Thread], timeout: float) -> None:
-        stuck_threads: List[Thread] = []
+    def join_threads(threads: list[Thread], timeout: float) -> None:
+        stuck_threads: list[Thread] = []
         t0 = time.perf_counter()
         for thread in threads:
             time_left = timeout - (time.perf_counter() - t0)

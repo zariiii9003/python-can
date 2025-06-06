@@ -27,6 +27,7 @@ from parameterized import parameterized
 
 import can
 from can.io import blf
+
 from .data.example_data import (
     TEST_COMMENTS,
     TEST_MESSAGES_BASE,
@@ -71,10 +72,10 @@ class ReaderWriterExtensionTest(unittest.TestCase):
             try:
                 if WriterType:
                     with can.Logger(tmp_file.name) as logger:
-                        assert type(logger) == WriterType
+                        assert type(logger) is WriterType
                 if ReaderType:
                     with can.LogReader(tmp_file.name) as player:
-                        assert type(player) == ReaderType
+                        assert type(player) is ReaderType
             finally:
                 os.remove(tmp_file.name)
 
@@ -139,23 +140,32 @@ class ReaderWriterTest(unittest.TestCase, ComparingMessagesTestCase, metaclass=A
         adds_default_channel=None,
     ):
         """
-        :param Callable writer_constructor: the constructor of the writer class
-        :param Callable reader_constructor: the constructor of the reader class
-        :param bool binary_file: if True, opens files in binary and not in text mode
-
-        :param bool check_remote_frames: if True, also tests remote frames
-        :param bool check_error_frames: if True, also tests error frames
-        :param bool check_fd: if True, also tests CAN FD frames
-        :param bool check_comments: if True, also inserts comments at some
-                                    locations and checks if they are contained anywhere literally
-                                    in the resulting file. The locations as selected randomly
-                                    but deterministically, which makes the test reproducible.
-        :param bool test_append: tests the writer in append mode as well
-
-        :param float or int or None allowed_timestamp_delta: directly passed to :meth:`can.Message.equals`
-        :param bool preserves_channel: if True, checks that the channel attribute is preserved
-        :param any adds_default_channel: sets this as the channel when not other channel was given
-                                         ignored, if *preserves_channel* is True
+        :param Callable writer_constructor:
+            the constructor of the writer class
+        :param Callable reader_constructor:
+            the constructor of the reader class
+        :param bool binary_file:
+            if True, opens files in binary and not in text mode
+        :param bool check_remote_frames:
+            if True, also tests remote frames
+        :param bool check_error_frames:
+            if True, also tests error frames
+        :param bool check_fd:
+            if True, also tests CAN FD frames
+        :param bool check_comments:
+            if True, also inserts comments at some
+            locations and checks if they are contained anywhere literally
+            in the resulting file. The locations as selected randomly
+            but deterministically, which makes the test reproducible.
+        :param bool test_append:
+            tests the writer in append mode as well
+        :param float or int or None allowed_timestamp_delta:
+            directly passed to :meth:`can.Message.equals`
+        :param bool preserves_channel:
+            if True, checks that the channel attribute is preserved
+        :param any adds_default_channel:
+            sets this as the channel when not other channel was given
+            gnored, if *preserves_channel* is True
         """
         # get all test messages
         self.original_messages = list(TEST_MESSAGES_BASE)
@@ -306,7 +316,7 @@ class ReaderWriterTest(unittest.TestCase, ComparingMessagesTestCase, metaclass=A
         with self.writer_constructor(my_file) as writer:
             self._write_all(writer)
             self._ensure_fsync(writer)
-            w = writer
+            _w = writer
         if hasattr(my_file, "closed"):
             self.assertTrue(my_file.closed)
 
@@ -315,7 +325,7 @@ class ReaderWriterTest(unittest.TestCase, ComparingMessagesTestCase, metaclass=A
         my_file = open(self.test_file_name, "rb" if self.binary_file else "r")
         with self.reader_constructor(my_file) as reader:
             read_messages = list(reader)
-            r = reader
+            _r = reader
         if hasattr(my_file, "closed"):
             self.assertTrue(my_file.closed)
 
@@ -355,7 +365,7 @@ class ReaderWriterTest(unittest.TestCase, ComparingMessagesTestCase, metaclass=A
                 writer = self.writer_constructor(self.test_file_name)
             except TypeError:
                 # if it is still a problem, raise the initial error
-                raise e
+                raise e from None
         with writer:
             for message in second_part:
                 writer(message)

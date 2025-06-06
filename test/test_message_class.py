@@ -87,11 +87,7 @@ class TestMessageClass(unittest.TestCase):
             self.assertEqual(len(message), kwargs["dlc"])
         self.assertTrue(bool(message))
         self.assertGreater(len(f"{message}"), 0)
-        _ = f"{message}"
-        with self.assertRaises(Exception):
-            _ = "{somespec}".format(
-                message
-            )  # pylint: disable=missing-format-argument-key
+
         if sys.version_info.major > 2:
             self.assertEqual(bytearray(bytes(message)), kwargs["data"])
 

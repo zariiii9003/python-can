@@ -28,8 +28,8 @@ from .config import (
 class Back2BackTestCase(unittest.TestCase):
     """Use two interfaces connected to the same CAN bus and test them against each other.
 
-    This very class declaration runs the test on the *virtual* interface but subclasses can be created for
-    other buses.
+    This very class declaration runs the test on the *virtual*
+    interface but subclasses can be created for other buses.
     """
 
     BITRATE = 500000
@@ -63,9 +63,7 @@ class Back2BackTestCase(unittest.TestCase):
     def _check_received_message(
         self, recv_msg: can.Message, sent_msg: can.Message
     ) -> None:
-        self.assertIsNotNone(
-            recv_msg, "No message was received on %s" % self.INTERFACE_2
-        )
+        self.assertIsNotNone(recv_msg, f"No message was received on {self.INTERFACE_2}")
         self.assertEqual(recv_msg.arbitration_id, sent_msg.arbitration_id)
         self.assertEqual(recv_msg.is_extended_id, sent_msg.is_extended_id)
         self.assertEqual(recv_msg.is_remote_frame, sent_msg.is_remote_frame)
@@ -363,7 +361,8 @@ class BasicTestEtas(Back2BackTestCase):
 
     def test_unique_message_instances(self):
         self.skipTest(
-            "creating a second instance of a channel with differing self-reception settings is not supported"
+            "creating a second instance of a channel with "
+            "differing self-reception settings is not supported"
         )
 
 

@@ -3,6 +3,7 @@ Test for PCAN Interface
 """
 
 import ctypes
+import platform
 import struct
 import unittest
 from unittest import mock
@@ -15,7 +16,38 @@ import can
 from can import BusState, CanProtocol
 from can.exceptions import CanInitializationError
 from can.interfaces.pcan import PcanBus, PcanError
-from can.interfaces.pcan.basic import *
+from can.interfaces.pcan.basic import (
+    PCAN_API_VERSION,
+    PCAN_CHANNEL_AVAILABLE,
+    PCAN_CHANNEL_IDENTIFYING,
+    PCAN_DEVICE_NUMBER,
+    PCAN_ERROR_BUSHEAVY,
+    PCAN_ERROR_ILLHW,
+    PCAN_ERROR_ILLOPERATION,
+    PCAN_ERROR_INITIALIZE,
+    PCAN_ERROR_OK,
+    PCAN_ERROR_QRCVEMPTY,
+    PCAN_ERROR_UNKNOWN,
+    PCAN_LISTEN_ONLY,
+    PCAN_MESSAGE_BRS,
+    PCAN_MESSAGE_ERRFRAME,
+    PCAN_MESSAGE_ESI,
+    PCAN_MESSAGE_EXTENDED,
+    PCAN_MESSAGE_FD,
+    PCAN_MESSAGE_RTR,
+    PCAN_MESSAGE_STANDARD,
+    PCAN_PARAMETER_OFF,
+    PCAN_PARAMETER_ON,
+    PCAN_RECEIVE_EVENT,
+    PCAN_USBBUS1,
+    PCAN_USBBUS8,
+    PCAN_USBBUS14,
+    TPCANChannelInformation,
+    TPCANMsg,
+    TPCANMsgFD,
+    TPCANTimestamp,
+    TPCANTimestampFD,
+)
 
 
 class TestPCANBus(unittest.TestCase):
@@ -218,7 +250,7 @@ class TestPCANBus(unittest.TestCase):
             )
 
     def test_recv(self):
-        data = (ctypes.c_ubyte * 8)(*[x for x in range(8)])
+        data = (ctypes.c_ubyte * 8)(*list(range(8)))
         msg = TPCANMsg(ID=0xC0FFEF, LEN=8, MSGTYPE=PCAN_MESSAGE_EXTENDED, DATA=data)
 
         timestamp = TPCANTimestamp()
@@ -234,7 +266,7 @@ class TestPCANBus(unittest.TestCase):
         self.assertEqual(recv_msg.timestamp, 0)
 
     def test_recv_fd(self):
-        data = (ctypes.c_ubyte * 64)(*[x for x in range(64)])
+        data = (ctypes.c_ubyte * 64)(*list(range(64)))
         msg = TPCANMsgFD(
             ID=0xC0FFEF,
             DLC=64,

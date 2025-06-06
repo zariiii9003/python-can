@@ -58,7 +58,7 @@ class CanalystIITest(unittest.TestCase):
 
     def test_missing_bitrate(self):
         with self.assertRaises(ValueError) as cm:
-            bus = CANalystIIBus(0, bitrate=None, timing=None)
+            _bus = CANalystIIBus(0, bitrate=None, timing=None)
         self.assertIn("bitrate", str(cm.exception))
 
     def test_receive_message(self):

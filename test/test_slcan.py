@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest.mock
-from typing import cast, Optional
+from typing import Optional, cast
 
 from serial.serialutil import SerialBase
 
@@ -13,8 +13,9 @@ from .config import IS_PYPY
 Mentioned in #1010 & #1490
 
 > PyPy works best with pure Python applications. Whenever you use a C extension module,
-> it runs much slower than in CPython. The reason is that PyPy can't optimize C extension modules since they're not fully supported.
-> In addition, PyPy has to emulate reference counting for that part of the code, making it even slower.
+> it runs much slower than in CPython. The reason is that PyPy can't optimize C extension modules
+> since they're not fully supported. In addition, PyPy has to emulate reference counting
+> for that part of the code, making it even slower.
 
 https://realpython.com/pypy-faster-python/#it-doesnt-work-well-with-c-extensions
 """
@@ -73,10 +74,10 @@ class slcanTestCase(unittest.TestCase):
     @unittest.mock.patch("serial.serial_for_url", SerialMock.serial_for_url)
     def setUp(self):
         self.bus = cast(
-            can.interfaces.slcan.slcanBus,
+            "can.interfaces.slcan.slcanBus",
             can.Bus("loop://", interface="slcan", sleep_after_open=0, timeout=TIMEOUT),
         )
-        self.serial = cast(SerialMock, self.bus.serialPortOrig)
+        self.serial = cast("SerialMock", self.bus.serialPortOrig)
         self.serial.reset_input_buffer()
 
     def tearDown(self):

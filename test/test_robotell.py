@@ -7,7 +7,8 @@ import can
 
 class robotellTestCase(unittest.TestCase):
     def setUp(self):
-        # will log timeout messages since we are not feeding ack messages to the serial port at this stage
+        # will log timeout messages since we are not feeding
+        # ack messages to the serial port at this stage
         self.bus = can.Bus("loop://", interface="robotell")
         self.serial = self.bus.serialPortOrig
         self.serial.read(self.serial.in_waiting)
@@ -59,7 +60,7 @@ class robotellTestCase(unittest.TestCase):
         self.assertEqual(msg.is_remote_frame, False)
         self.assertEqual(msg.dlc, 6)
         self.assertSequenceEqual(msg.data, [0xAA, 0xA5, 0x55, 0x55, 0xA5, 0xAA])
-        data = self.serial.read(self.serial.in_waiting)
+        _data = self.serial.read(self.serial.in_waiting)
 
     def test_send_extended(self):
         msg = can.Message(
@@ -141,7 +142,7 @@ class robotellTestCase(unittest.TestCase):
         self.assertSequenceEqual(
             msg.data, [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x31, 0x32, 0x33]
         )
-        data = self.serial.read(self.serial.in_waiting)
+        _data = self.serial.read(self.serial.in_waiting)
 
     def test_send_standard(self):
         msg = can.Message(
@@ -215,7 +216,7 @@ class robotellTestCase(unittest.TestCase):
         self.assertEqual(msg.is_extended_id, True)
         self.assertEqual(msg.is_remote_frame, True)
         self.assertEqual(msg.dlc, 7)
-        data = self.serial.read(self.serial.in_waiting)
+        _data = self.serial.read(self.serial.in_waiting)
 
     def test_send_extended_remote(self):
         msg = can.Message(
@@ -337,7 +338,7 @@ class robotellTestCase(unittest.TestCase):
         # test nothing more left
         msg = self.bus.recv(1)
         self.assertIsNone(msg)
-        data = self.serial.read(self.serial.in_waiting)
+        _data = self.serial.read(self.serial.in_waiting)
 
     def test_serial_number(self):
         self.serial.write(

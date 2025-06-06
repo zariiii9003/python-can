@@ -9,7 +9,6 @@ import functools
 import pickle
 import sys
 import time
-from test.config import IS_WINDOWS
 from unittest.mock import Mock
 
 import pytest
@@ -27,6 +26,7 @@ from can.interfaces.vector import (
     xlclass,
     xldefine,
 )
+from test.config import IS_WINDOWS
 
 XLDRIVER_FOUND = canlib.xldriver is not None
 

@@ -10,7 +10,7 @@ import sys
 import unittest
 from abc import ABCMeta, abstractmethod
 
-from .config import *
+from .config import IS_WINDOWS
 
 
 class CanScriptTest(unittest.TestCase, metaclass=ABCMeta):
@@ -44,9 +44,8 @@ class CanScriptTest(unittest.TestCase, metaclass=ABCMeta):
             self.assertIn(
                 return_code,
                 allowed,
-                'Calling "{}" failed (exit code was {} and not SUCCESS/0 or EINVAL/22):\n{}'.format(
-                    command, return_code, output
-                ),
+                f'Calling "{command}" failed (exit code was '
+                f"{return_code} and not SUCCESS/0 or EINVAL/22):\n{output}",
             )
 
     def test_does_not_crash(self):

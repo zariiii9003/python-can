@@ -107,7 +107,7 @@ class CyclicSocketCan(unittest.TestCase):
         self.assertTrue(start_index != -1)
 
         # Now go through the partitioned results and assert that they're equal
-        for rx_index, rx_message in enumerate(results):
+        for _rx_index, rx_message in enumerate(results):
             tx_message = messages[start_index]
 
             self.assertIsNotNone(rx_message)
@@ -178,7 +178,7 @@ class CyclicSocketCan(unittest.TestCase):
         self.assertTrue(start_index != -1)
 
         # Now go through the partitioned results and assert that they're equal
-        for rx_index, rx_message in enumerate(results):
+        for _rx_index, rx_message in enumerate(results):
             tx_message = messages[start_index]
 
             self.assertIsNotNone(rx_message)
@@ -221,11 +221,11 @@ class CyclicSocketCan(unittest.TestCase):
 
     def test_cyclic_initializer_invalid_none(self):
         with self.assertRaises(ValueError):
-            task = self._send_bus.send_periodic(None, self.PERIOD)
+            _task = self._send_bus.send_periodic(None, self.PERIOD)
 
     def test_cyclic_initializer_invalid_empty_list(self):
         with self.assertRaises(ValueError):
-            task = self._send_bus.send_periodic([], self.PERIOD)
+            _task = self._send_bus.send_periodic([], self.PERIOD)
 
     def test_cyclic_initializer_different_arbitration_ids(self):
         messages = []
@@ -244,7 +244,7 @@ class CyclicSocketCan(unittest.TestCase):
             )
         )
         with self.assertRaises(ValueError):
-            task = self._send_bus.send_periodic(messages, self.PERIOD)
+            _task = self._send_bus.send_periodic(messages, self.PERIOD)
 
     def test_start_already_started_task(self):
         messages_a = can.Message(

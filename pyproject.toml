@@ -187,6 +187,11 @@ ignore = [
 "can/player.py" = ["T20"]  # flake8-print
 "can/viewer.py" = ["T20"]  # flake8-print
 "examples/*" = ["T20"]  # flake8-print
+"test/*" = [
+    "N",       # pep8-naming
+    "RUF012",  # mutable-class-default
+    "T20",     # flake8-print
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["can"]

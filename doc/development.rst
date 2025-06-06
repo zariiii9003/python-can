@@ -53,9 +53,9 @@ The documentation can be built with::
 The linters can be run with::
 
     pip install --group lint -e .
-    black --check can
+    black --check can examples doc test
     mypy can
-    ruff check can
+    ruff check can examples doc test
     pylint can/**.py can/io doc/conf.py examples/**.py can/interfaces/socketcan
 
 

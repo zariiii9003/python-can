@@ -14,7 +14,7 @@ def constructor(request):
     try:
         module = importlib.import_module(mod)
         constructor = getattr(module, cls)
-    except:
+    except:  # noqa: E722
         pytest.skip("Unable to load interface")
 
     return constructor
@@ -36,7 +36,7 @@ def interface(constructor):
 def test_interface_calls_parent_shutdown(mock_shutdown, interface):
     try:
         interface.shutdown()
-    except:
+    except:  # noqa: E722
         pass
     finally:
         mock_shutdown.assert_called()

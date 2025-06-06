@@ -38,7 +38,7 @@ class TestPlayerScriptModule(unittest.TestCase):
         self.mock_virtual_bus.__exit__.assert_called_once()
 
     def test_play_virtual(self):
-        sys.argv = self.baseargs + [self.logfile]
+        sys.argv = [*self.baseargs, self.logfile]
         can.player.main()
         msg1 = can.Message(
             timestamp=2.501,
@@ -65,7 +65,7 @@ class TestPlayerScriptModule(unittest.TestCase):
         self.assertSuccessfulCleanup()
 
     def test_play_virtual_verbose(self):
-        sys.argv = self.baseargs + ["-v", self.logfile]
+        sys.argv = [*self.baseargs, "-v", self.logfile]
         with unittest.mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
             can.player.main()
         self.assertIn("09 08 07 06 05 04 03 02", mock_stdout.getvalue())
@@ -76,7 +76,7 @@ class TestPlayerScriptModule(unittest.TestCase):
     def test_play_virtual_exit(self):
         self.MockSleep.side_effect = [None, KeyboardInterrupt]
 
-        sys.argv = self.baseargs + [self.logfile]
+        sys.argv = [*self.baseargs, self.logfile]
         can.player.main()
         assert self.mock_virtual_bus.send.call_count <= 2
         self.assertSuccessfulCleanup()
@@ -85,7 +85,7 @@ class TestPlayerScriptModule(unittest.TestCase):
         logfile = os.path.join(
             os.path.dirname(__file__), "data", "logfile_errorframes.asc"
         )
-        sys.argv = self.baseargs + ["-v", logfile]
+        sys.argv = [*self.baseargs, "-v", logfile]
         can.player.main()
         self.assertEqual(self.mock_virtual_bus.send.call_count, 9)
         self.assertSuccessfulCleanup()
@@ -94,7 +94,7 @@ class TestPlayerScriptModule(unittest.TestCase):
         logfile = os.path.join(
             os.path.dirname(__file__), "data", "logfile_errorframes.asc"
         )
-        sys.argv = self.baseargs + ["-v", "--error-frames", logfile]
+        sys.argv = [*self.baseargs, "-v", "--error-frames", logfile]
         can.player.main()
         self.assertEqual(self.mock_virtual_bus.send.call_count, 12)
         self.assertSuccessfulCleanup()

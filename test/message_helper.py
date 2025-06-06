@@ -15,8 +15,10 @@ class ComparingMessagesTestCase:
 
     def __init__(self, allowed_timestamp_delta=0.0, preserves_channel=True):
         """
-        :param float or int or None allowed_timestamp_delta: directly passed to :meth:`can.Message.equals`
-        :param bool preserves_channel: if True, checks that the channel attribute is preserved
+        :param float or int or None allowed_timestamp_delta:
+            directly passed to :meth:`can.Message.equals`
+        :param bool preserves_channel:
+            if True, checks that the channel attribute is preserved
         """
         self.allowed_timestamp_delta = allowed_timestamp_delta
         self.preserves_channel = preserves_channel

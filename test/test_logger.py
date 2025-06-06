@@ -68,7 +68,7 @@ class TestLoggerScriptModule(unittest.TestCase):
     def test_log_virtual_active(self):
         self.mock_virtual_bus.recv = Mock(side_effect=[self.testmsg, KeyboardInterrupt])
 
-        sys.argv = self.baseargs + ["--active"]
+        sys.argv = [*self.baseargs, "--active"]
         can.logger.main()
         self.assertSuccessfullCleanup()
         self.mock_logger.assert_called_once()
@@ -77,7 +77,7 @@ class TestLoggerScriptModule(unittest.TestCase):
     def test_log_virtual_passive(self):
         self.mock_virtual_bus.recv = Mock(side_effect=[self.testmsg, KeyboardInterrupt])
 
-        sys.argv = self.baseargs + ["--passive"]
+        sys.argv = [*self.baseargs, "--passive"]
         can.logger.main()
         self.assertSuccessfullCleanup()
         self.mock_logger.assert_called_once()
@@ -86,7 +86,8 @@ class TestLoggerScriptModule(unittest.TestCase):
     def test_log_virtual_with_config(self):
         self.mock_virtual_bus.recv = Mock(side_effect=[self.testmsg, KeyboardInterrupt])
 
-        sys.argv = self.baseargs + [
+        sys.argv = [
+            *self.baseargs,
             "--bitrate",
             "250000",
             "--fd",
@@ -102,13 +103,14 @@ class TestLoggerScriptModule(unittest.TestCase):
         self.MockLoggerUse = self.MockLoggerSized
         self.loggerToUse = self.mock_logger_sized
 
-        sys.argv = self.baseargs + ["--file_size", "1000000"]
+        sys.argv = [*self.baseargs, "--file_size", "1000000"]
         can.logger.main()
         self.assertSuccessfullCleanup()
         self.mock_logger_sized.assert_called_once()
 
     def test_parse_logger_args(self):
-        args = self.baseargs + [
+        args = [
+            *self.baseargs,
             "--bitrate",
             "250000",
             "--fd",
@@ -141,7 +143,8 @@ class TestLoggerScriptModule(unittest.TestCase):
         assert results.can_filters == expected_can_filters
 
     def test_parse_timing(self) -> None:
-        can20_args = self.baseargs + [
+        can20_args = [
+            *self.baseargs,
             "--timing",
             "f_clock=8_000_000",
             "tseg1=5",
@@ -157,7 +160,8 @@ class TestLoggerScriptModule(unittest.TestCase):
         )
         assert additional_config["app_name"] == "CANalyzer"
 
-        canfd_args = self.baseargs + [
+        canfd_args = [
+            *self.baseargs,
             "--timing",
             "f_clock=80_000_000",
             "nom_tseg1=119",
@@ -185,7 +189,8 @@ class TestLoggerScriptModule(unittest.TestCase):
         assert additional_config["app_name"] == "CANalyzer"
 
         # remove f_clock parameter, parsing should fail
-        incomplete_args = self.baseargs + [
+        incomplete_args = [
+            *self.baseargs,
             "--timing",
             "tseg1=5",
             "tseg2=2",
@@ -266,7 +271,7 @@ class TestLoggerCompressedFile(unittest.TestCase):
         Basic test to verify Logger is able to write gzip files.
         """
         self.mock_virtual_bus.recv = Mock(side_effect=[self.testmsg, KeyboardInterrupt])
-        sys.argv = self.baseargs + ["--file_name", self.testfile.name]
+        sys.argv = [*self.baseargs, "--file_name", self.testfile.name]
         can.logger.main()
         with gzip.open(self.testfile.name, "rt") as testlog:
             last_line = testlog.readlines()[-1]
