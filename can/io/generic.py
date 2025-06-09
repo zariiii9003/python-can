@@ -1,69 +1,55 @@
 """Contains generic base classes for file IO."""
 
-import gzip
 import locale
-from abc import ABCMeta
+import os
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from contextlib import AbstractContextManager
+from io import BufferedIOBase, TextIOWrapper
+from pathlib import Path
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     BinaryIO,
+    Generic,
     Literal,
     Optional,
     TextIO,
+    TypeVar,
     Union,
-    cast,
 )
 
 from typing_extensions import Self
 
-from .. import typechecking
 from ..listener import Listener
 from ..message import Message
+from ..typechecking import FileLike, StringPathLike
+
+if TYPE_CHECKING:
+    from _typeshed import (
+        OpenBinaryModeReading,
+        OpenBinaryModeUpdating,
+        OpenBinaryModeWriting,
+        OpenTextModeReading,
+        OpenTextModeUpdating,
+        OpenTextModeWriting,
+    )
 
 
-class BaseIOHandler(AbstractContextManager):
-    """A generic file handler that can be used for reading and writing.
+_IoTypeVar = TypeVar("_IoTypeVar", bound=FileLike)
 
-    Can be used as a context manager.
 
-    :attr file:
-        the file-like object that is kept internally, or `None` if none
-        was opened
-    """
+class MessageWriter(AbstractContextManager["MessageWriter"], Listener, ABC):
+    """The base class for all writers."""
 
-    file: Optional[typechecking.FileLike]
+    @abstractmethod
+    def __init__(self, file: StringPathLike, **kwargs: Any) -> None:
+        pass
 
-    def __init__(
-        self,
-        file: Optional[typechecking.AcceptedIOType],
-        mode: str = "rt",
-        **kwargs: Any,
-    ) -> None:
-        """
-        :param file: a path-like object to open a file, a file-like object
-                     to be used as a file or `None` to not use a file at all
-        :param mode: the mode that should be used to open the file, see
-                     :func:`open`, ignored if *file* is `None`
-        """
-        if file is None or (hasattr(file, "read") and hasattr(file, "write")):
-            # file is None or some file-like object
-            self.file = cast("Optional[typechecking.FileLike]", file)
-        else:
-            encoding: Optional[str] = (
-                None
-                if "b" in mode
-                else kwargs.get("encoding", locale.getpreferredencoding(False))
-            )
-            # pylint: disable=consider-using-with
-            # file is some path-like object
-            self.file = cast(
-                "typechecking.FileLike", open(file, mode, encoding=encoding)
-            )
-
-        # for multiple inheritance
-        super().__init__()
+    @abstractmethod
+    def stop(self) -> None:
+        pass
 
     def __enter__(self) -> Self:
         return self
@@ -71,59 +57,125 @@ class BaseIOHandler(AbstractContextManager):
     def __exit__(
         self,
         exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
     ) -> Literal[False]:
         self.stop()
         return False
 
-    def stop(self) -> None:
-        """Closes the underlying file-like object and flushes it, if it was opened in write mode."""
-        if self.file is not None:
-            # this also implies a flush()
-            self.file.close()
+
+class SizedMessageWriter(MessageWriter, ABC):
+    @abstractmethod
+    def file_size(self) -> int:
+        pass
 
 
-class MessageWriter(BaseIOHandler, Listener, metaclass=ABCMeta):
-    """The base class for all writers."""
-
-    file: Optional[typechecking.FileLike]
-
-
-class FileIOMessageWriter(MessageWriter, metaclass=ABCMeta):
+class FileIOMessageWriter(SizedMessageWriter, Generic[_IoTypeVar]):
     """A specialized base class for all writers with file descriptors."""
 
-    file: typechecking.FileLike
+    file: _IoTypeVar
 
-    def __init__(
-        self, file: typechecking.AcceptedIOType, mode: str = "wt", **kwargs: Any
-    ) -> None:
-        # Not possible with the type signature, but be verbose for user-friendliness
-        if file is None:
-            raise ValueError("The given file cannot be None")
+    @abstractmethod
+    def __init__(self, file: Union[StringPathLike, _IoTypeVar], **kwargs: Any) -> None:
+        pass
 
-        super().__init__(file, mode, **kwargs)
+    def stop(self) -> None:
+        self.file.close()
 
     def file_size(self) -> int:
-        """Return an estimate of the current file size in bytes."""
         return self.file.tell()
 
 
-class TextIOMessageWriter(FileIOMessageWriter, metaclass=ABCMeta):
-    file: TextIO
+class TextIOMessageWriter(FileIOMessageWriter[Union[TextIO, TextIOWrapper]], ABC):
+    def __init__(
+        self,
+        file: Union[StringPathLike, TextIO, TextIOWrapper],
+        mode: "Union[OpenTextModeUpdating, OpenTextModeWriting]" = "w",
+        **kwargs: Any,
+    ) -> None:
+        if isinstance(file, (str, os.PathLike)):
+            encoding: str = kwargs.get("encoding", locale.getpreferredencoding(False))
+            # pylint: disable=consider-using-with
+            self.file = Path(file).open(mode=mode, encoding=encoding)
+        else:
+            self.file = file
 
 
-class BinaryIOMessageWriter(FileIOMessageWriter, metaclass=ABCMeta):
-    file: Union[BinaryIO, gzip.GzipFile]
+class BinaryIOMessageWriter(FileIOMessageWriter[Union[BinaryIO, BufferedIOBase]], ABC):
+    def __init__(
+        self,
+        file: Union[StringPathLike, BinaryIO, BufferedIOBase],
+        mode: "Union[OpenBinaryModeUpdating, OpenBinaryModeWriting]" = "wb",
+        **kwargs: Any,
+    ) -> None:
+        if isinstance(file, (str, os.PathLike)):
+            # pylint: disable=consider-using-with,unspecified-encoding
+            self.file = Path(file).open(mode=mode)
+        else:
+            self.file = file
 
 
-class MessageReader(BaseIOHandler, Iterable[Message], metaclass=ABCMeta):
+class MessageReader(AbstractContextManager["MessageReader"], Iterable[Message], ABC):
     """The base class for all readers."""
 
+    @abstractmethod
+    def __init__(self, file: StringPathLike, **kwargs: Any) -> None:
+        pass
 
-class TextIOMessageReader(MessageReader, metaclass=ABCMeta):
-    file: TextIO
+    @abstractmethod
+    def stop(self) -> None:
+        pass
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> Literal[False]:
+        self.stop()
+        return False
 
 
-class BinaryIOMessageReader(MessageReader, metaclass=ABCMeta):
-    file: Union[BinaryIO, gzip.GzipFile]
+class FileIOMessageReader(MessageReader, Generic[_IoTypeVar]):
+    """A specialized base class for all readers with file descriptors."""
+
+    file: _IoTypeVar
+
+    @abstractmethod
+    def __init__(self, file: Union[StringPathLike, _IoTypeVar], **kwargs: Any) -> None:
+        pass
+
+    def stop(self) -> None:
+        self.file.close()
+
+
+class TextIOMessageReader(FileIOMessageReader[Union[TextIO, TextIOWrapper]], ABC):
+    def __init__(
+        self,
+        file: Union[StringPathLike, TextIO, TextIOWrapper],
+        mode: "OpenTextModeReading" = "r",
+        **kwargs: Any,
+    ) -> None:
+        if isinstance(file, (str, os.PathLike)):
+            encoding: str = kwargs.get("encoding", locale.getpreferredencoding(False))
+            # pylint: disable=consider-using-with
+            self.file = Path(file).open(mode=mode, encoding=encoding)
+        else:
+            self.file = file
+
+
+class BinaryIOMessageReader(FileIOMessageReader[Union[BinaryIO, BufferedIOBase]], ABC):
+    def __init__(
+        self,
+        file: Union[StringPathLike, BinaryIO, BufferedIOBase],
+        mode: "OpenBinaryModeReading" = "rb",
+        **kwargs: Any,
+    ) -> None:
+        if isinstance(file, (str, os.PathLike)):
+            # pylint: disable=consider-using-with,unspecified-encoding
+            self.file = Path(file).open(mode=mode)
+        else:
+            self.file = file
