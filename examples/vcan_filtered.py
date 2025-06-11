@@ -5,14 +5,18 @@ This shows how message filtering works.
 """
 
 import time
+from typing import TYPE_CHECKING
 
 import can
+
+if TYPE_CHECKING:
+    from can.typechecking import CanFilters
 
 
 def main():
     """Send some messages to itself and apply filtering."""
     with can.Bus(interface="virtual", receive_own_messages=True) as bus:
-        can_filters = [{"can_id": 1, "can_mask": 0xF, "extended": True}]
+        can_filters: CanFilters = [{"can_id": 1, "can_mask": 0xF, "extended": True}]
         bus.set_filters(can_filters)
 
         # print all incoming messages, which includes the ones sent,

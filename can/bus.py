@@ -446,7 +446,6 @@ class BusABC(ABC):
         for _filter in self._filters:
             # check if this filter even applies to the message
             if "extended" in _filter:
-                _filter = cast("typechecking.CanFilterExtended", _filter)
                 if _filter["extended"] != msg.is_extended_id:
                     continue
 

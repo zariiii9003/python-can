@@ -87,7 +87,7 @@ docs = [
 ]
 lint = [
     "pylint==3.3.*",
-    "ruff==0.11.12",
+    "ruff==0.11.13",
     "black==25.1.*",
     "mypy==1.16.*",
 ]
@@ -146,6 +146,14 @@ exclude = [
 module = [
     "can.interfaces.*",
     "can.viewer",
+    "crc",
+    "cyclic",
+    "cyclic_multiple",
+    "print_notifier","receive_all",
+    "serial_com",
+    "send_one",
+    "simple_log_converter",
+    "vcan_filtered",
 ]
 disallow_untyped_calls = false
 disallow_untyped_defs = false

@@ -121,7 +121,7 @@ def cyclic_multiple_send_modify(bus):
     )
     print("Starting to send a message with odd every 1 s for 8 s with odd data")
     task = bus.send_periodic(messages_odd, 1)
-    assert isinstance(task, can.CyclicSendTaskABC)
+    assert isinstance(task, can.ModifiableCyclicTaskABC)
     time.sleep(8)
     print("Starting to send a message with even data every 1 s for 10 s with even data")
     task.modify_data(messages_even)

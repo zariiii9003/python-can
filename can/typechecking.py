@@ -2,7 +2,8 @@
 
 import io
 import sys
-import typing
+from collections.abc import Iterable, Sequence
+from typing import IO, TYPE_CHECKING, Any, NewType, Union
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -15,47 +16,45 @@ else:
     from typing_extensions import TypedDict
 
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     import os
     import struct
 
 
-class CanFilter(TypedDict):
+class CanFilterBase(TypedDict):
     can_id: int
     can_mask: int
 
 
-class CanFilterExtended(TypedDict):
-    can_id: int
-    can_mask: int
+class CanFilter(CanFilterBase, total=False):
     extended: bool
 
 
-CanFilters = typing.Sequence[typing.Union[CanFilter, CanFilterExtended]]
+CanFilters = Sequence[Union[CanFilter]]
 
 # TODO: Once buffer protocol support lands in typing, we should switch to that,
 # since can.message.Message attempts to call bytearray() on the given data, so
 # this should have the same typing info.
 #
 # See: https://github.com/python/typing/issues/593
-CanData = typing.Union[bytes, bytearray, int, typing.Iterable[int]]
+CanData = Union[bytes, bytearray, int, Iterable[int]]
 
 # Used for the Abstract Base Class
 ChannelStr = str
 ChannelInt = int
-Channel = typing.Union[ChannelInt, ChannelStr, typing.Sequence[ChannelInt]]
+Channel = Union[ChannelInt, ChannelStr, Sequence[ChannelInt]]
 
 # Used by the IO module
-FileLike = typing.Union[typing.IO[typing.Any], io.TextIOWrapper, io.BufferedIOBase]
-StringPathLike = typing.Union[str, "os.PathLike[str]"]
+FileLike = Union[IO[Any], io.TextIOWrapper, io.BufferedIOBase]
+StringPathLike = Union[str, "os.PathLike[str]"]
 
-BusConfig = typing.NewType("BusConfig", dict[str, typing.Any])
+BusConfig = NewType("BusConfig", dict[str, Any])
 
 # Used by CLI scripts
-TAdditionalCliArgs: TypeAlias = dict[str, typing.Union[str, int, float, bool]]
+TAdditionalCliArgs: TypeAlias = dict[str, Union[str, int, float, bool]]
 TDataStructs: TypeAlias = dict[
-    typing.Union[int, tuple[int, ...]],
-    "typing.Union[struct.Struct, tuple[struct.Struct, *tuple[float, ...]]]",
+    Union[int, tuple[int, ...]],
+    "Union[struct.Struct, tuple[struct.Struct, *tuple[float, ...]]]",
 ]
 
 
@@ -64,7 +63,7 @@ class AutoDetectedConfig(TypedDict):
     channel: Channel
 
 
-ReadableBytesLike = typing.Union[bytes, bytearray, memoryview]
+ReadableBytesLike = Union[bytes, bytearray, memoryview]
 
 
 class BitTimingDict(TypedDict):

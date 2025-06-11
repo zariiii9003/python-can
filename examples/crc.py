@@ -30,7 +30,7 @@ def crc_send(bus):
         "Starting to send a message with updating counter and checksum every 1 s for 8 s"
     )
     task = bus.send_periodic(messages, 1)
-    assert isinstance(task, can.CyclicSendTaskABC)
+    assert isinstance(task, can.ModifiableCyclicTaskABC)
     time.sleep(8)
 
     msg = can.Message(arbitration_id=0x12345678, data=[8, 9, 10, 11, 12, 13, 14, 0])

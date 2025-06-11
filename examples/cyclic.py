@@ -62,6 +62,10 @@ def test_periodic_send_with_modifying_data(bus):
         print("This interface doesn't seem to support modification")
         task.stop()
         return
+    if not isinstance(task, can.RestartableCyclicTaskABC):
+        print("This interface doesn't seem to support restart")
+        task.stop()
+        return
     time.sleep(2)
     print("Changing data of running task to begin with 99")
     msg.data[0] = 0x99
