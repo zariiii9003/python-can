@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from threading import Lock
 
 
-class ThreadSafeBus(ObjectProxy):  # pylint: disable=abstract-method
+class ThreadSafeBus(ObjectProxy):  # type: ignore[misc]  # pylint: disable=abstract-method
     """
     Contains a thread safe :class:`can.BusABC` implementation that
     wraps around an existing interface instance. All public methods

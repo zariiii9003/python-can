@@ -1,7 +1,6 @@
 """Types for mypy type-checking"""
 
 import io
-import struct
 import sys
 import typing
 
@@ -18,6 +17,7 @@ else:
 
 if typing.TYPE_CHECKING:
     import os
+    import struct
 
 
 class CanFilter(TypedDict):
@@ -55,7 +55,7 @@ BusConfig = typing.NewType("BusConfig", dict[str, typing.Any])
 TAdditionalCliArgs: TypeAlias = dict[str, typing.Union[str, int, float, bool]]
 TDataStructs: TypeAlias = dict[
     typing.Union[int, tuple[int, ...]],
-    typing.Union[struct.Struct, tuple, None],
+    "typing.Union[struct.Struct, tuple[struct.Struct, *tuple[float, ...]]]",
 ]
 
 
