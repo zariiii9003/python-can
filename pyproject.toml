@@ -117,10 +117,10 @@ include = ["can*"]
 # can be empty if no extra settings are needed, presence enables setuptools_scm
 
 [tool.mypy]
+strict_bytes = true
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
-no_implicit_optional = true
 disallow_incomplete_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -146,6 +146,32 @@ exclude = [
     "^can/interfaces/usb2can",
     "^can/interfaces/virtual",
 ]
+
+[[tool.mypy.overrides]]
+module = [
+    "can.bit_timing",
+    "can.broadcastmanager",
+    "can.bus",
+    "can.cli",
+    "can.exceptions",
+    "can.interface",
+    "can.io.*",
+    "can.listener",
+    "can.logger",
+    "can.message",
+    "can.notifier",
+    "can.player",
+    "can.util",
+]
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_reexport = true
+strict_equality = true
+extra_checks = true
 
 [tool.ruff]
 line-length = 100

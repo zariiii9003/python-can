@@ -5,7 +5,7 @@ Contains the ABC bus implementation and its documentation.
 import contextlib
 import logging
 import threading
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from enum import Enum, auto
 from time import time
@@ -21,7 +21,7 @@ from typing import (
 from typing_extensions import Self
 
 import can
-import can.typechecking
+from can import typechecking
 from can.broadcastmanager import CyclicSendTaskABC, ThreadBasedCyclicSendTask
 from can.message import Message
 
@@ -45,7 +45,7 @@ class CanProtocol(Enum):
     CAN_XL = auto()
 
 
-class BusABC(metaclass=ABCMeta):
+class BusABC(ABC):
     """The CAN Bus Abstract Base Class that serves as the basis
     for all concrete interfaces.
 
@@ -69,10 +69,10 @@ class BusABC(metaclass=ABCMeta):
     @abstractmethod
     def __init__(
         self,
-        channel: Any,
-        can_filters: Optional[can.typechecking.CanFilters] = None,
-        **kwargs: object,
-    ):
+        channel: typechecking.Channel,
+        can_filters: Optional[typechecking.CanFilters] = None,
+        **kwargs: Any,
+    ) -> None:
         """Construct and open a CAN bus instance of the specified type.
 
         Subclasses should call though this method with all given parameters
@@ -380,7 +380,7 @@ class BusABC(metaclass=ABCMeta):
                 yield msg
 
     @property
-    def filters(self) -> Optional[can.typechecking.CanFilters]:
+    def filters(self) -> Optional[typechecking.CanFilters]:
         """
         Modify the filters of this bus. See :meth:`~can.BusABC.set_filters`
         for details.
@@ -388,12 +388,10 @@ class BusABC(metaclass=ABCMeta):
         return self._filters
 
     @filters.setter
-    def filters(self, filters: Optional[can.typechecking.CanFilters]) -> None:
+    def filters(self, filters: Optional[typechecking.CanFilters]) -> None:
         self.set_filters(filters)
 
-    def set_filters(
-        self, filters: Optional[can.typechecking.CanFilters] = None
-    ) -> None:
+    def set_filters(self, filters: Optional[typechecking.CanFilters] = None) -> None:
         """Apply filtering to all messages received by this Bus.
 
         All messages that match at least one filter are returned.
@@ -419,7 +417,7 @@ class BusABC(metaclass=ABCMeta):
         with contextlib.suppress(NotImplementedError):
             self._apply_filters(self._filters)
 
-    def _apply_filters(self, filters: Optional[can.typechecking.CanFilters]) -> None:
+    def _apply_filters(self, filters: Optional[typechecking.CanFilters]) -> None:
         """
         Hook for applying the filters to the underlying kernel or
         hardware if supported/implemented by the interface.
@@ -448,7 +446,7 @@ class BusABC(metaclass=ABCMeta):
         for _filter in self._filters:
             # check if this filter even applies to the message
             if "extended" in _filter:
-                _filter = cast("can.typechecking.CanFilterExtended", _filter)
+                _filter = cast("typechecking.CanFilterExtended", _filter)
                 if _filter["extended"] != msg.is_extended_id:
                     continue
 
@@ -525,7 +523,7 @@ class BusABC(metaclass=ABCMeta):
         return self._can_protocol
 
     @staticmethod
-    def _detect_available_configs() -> list[can.typechecking.AutoDetectedConfig]:
+    def _detect_available_configs() -> list[typechecking.AutoDetectedConfig]:
         """Detect all configurations/channels that this interface could
         currently connect with.
 

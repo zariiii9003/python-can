@@ -43,7 +43,7 @@ CanData = typing.Union[bytes, bytearray, int, typing.Iterable[int]]
 # Used for the Abstract Base Class
 ChannelStr = str
 ChannelInt = int
-Channel = typing.Union[ChannelInt, ChannelStr]
+Channel = typing.Union[ChannelInt, ChannelStr, typing.Sequence[ChannelInt]]
 
 # Used by the IO module
 FileLike = typing.Union[typing.IO[typing.Any], io.TextIOWrapper, io.BufferedIOBase]
