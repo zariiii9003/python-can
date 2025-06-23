@@ -46,7 +46,7 @@ jobs:
         sudo ./test/open_vcan.sh
     - name: Test with pytest via tox
       run: |
-        tox -e gh
+        tox -e py
       env:
         # SocketCAN tests currently fail with PyPy because it does not support raw CAN sockets
         # See: https://foss.heptapod.net/pypy/pypy/-/issues/3809
@@ -76,53 +76,20 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.10"
+        python-version: "3.13"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --group lint -e .
-    - name: mypy 3.9
+        pip install tox
+    - name: format
       run: |
-        mypy --python-version 3.9 .
-    - name: mypy 3.10
+        tox -e format
+    - name: mypy
       run: |
-        mypy --python-version 3.10 .
-    - name: mypy 3.11
+        tox -e type
+    - name: lint
       run: |
-        mypy --python-version 3.11 .
-    - name: mypy 3.12
-      run: |
-        mypy --python-version 3.12 .
-    - name: mypy 3.13
-      run: |
-        mypy --python-version 3.13 .
-    - name: ruff
-      run: |
-        ruff check can
-    - name: pylint
-      run: |
-        pylint \
-        can/**.py \
-        can/io \
-        doc/conf.py \
-        examples/**.py \
-        can/interfaces/socketcan
-
-  format:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install --group lint
-    - name: Code Format Check with Black
-      run: |
-        black --check --verbose .
+        tox -e lint
 
   docs:
     runs-on: ubuntu-latest
@@ -131,7 +98,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12"
+        python-version: "3.13"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -150,7 +117,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.13"
       - name: Build wheel and sdist
         run: pipx run build
       - name: Check build artifacts
