@@ -78,7 +78,10 @@ jobs:
         parallel-finished: true
 
   static-code-analysis:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # 4.2.2
       with:

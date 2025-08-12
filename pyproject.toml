@@ -132,6 +132,7 @@ disallow_incomplete_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 exclude = [
+    "^build",
     "^doc/conf.py$",
     "^test",
     "^can/interfaces/etas",
