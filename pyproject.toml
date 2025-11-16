@@ -4,6 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-can"
+import-names = ["can"]
 dynamic = ["readme", "version"]
 description = "Controller Area Network interface module for Python"
 authors = [{ name = "python-can contributors" }]
